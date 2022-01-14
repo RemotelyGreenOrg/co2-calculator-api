@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="shortcut icon" type="image/x-icon" href="data:image/x-icon;," />
+    <link rel="preload" as="fetch" id="settings" href="/footprint/settings" crossorigin />
+  </head>
+  <body>
+    <h1>Chat</h1>
+    <form>
+      <input type="text" id="message" name="message" autocomplete="off" required />
+      <button>Send</button>
+    </form>
+    <ul id="messages"></ul>
+    <script>
+      let form, input, messages, ws;
+
+      function onFormSubmit(event) {
+        event.preventDefault();
+        if (input.value !== "") ws.send(input.value);
+        input.value = "";
+      }
+
+      function onMessage(event) {
+        const message = document.createElement("li");
+        message.textContent = event.data;
+        messages.appendChild(message);
+      }
+
+      function init(settings) {
+        ws = new WebSocket(settings.websocket_endpoint);
+        ws.addEventListener("message", onMessage);
+
+        form = document.querySelector("form");
+        form.addEventListener("submit", onFormSubmit);
+
+        input = form.querySelector("#message");
+        messages = document.querySelector("#messages");
+      }
+
+      fetch(document.querySelector("head > #settings").href)
+        .then(response => response.json())
+        .then(init);
+    </script>
+  </body>
+</html>

@@ -1,32 +1,32 @@
 from fastapi import FastAPI, Request
 from starlette.websockets import WebSocket
 from pydantic import BaseSettings
-from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 
 
 # These default settings get overridden by environment variables. @see https://fastapi.tiangolo.com/advanced/settings/
 class Settings(BaseSettings):
-    websocket_endpoint: str = "ws://localhost:8000/ws"
+    websocket_endpoint: str = "ws://localhost:8000/footprint"
 
 
 settings = Settings()
 app = FastAPI()
-templates = Jinja2Templates("templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.get("/")
 def read_root():
-    return {"websocket_endpoint": settings.websocket_endpoint}
+    return {"message": "Hello world!"}
 
 
-@app.get("/chat")
-async def get(request: Request):
-    return templates.TemplateResponse("chat.jinja", {"request": request, "websocket_endpoint": settings.websocket_endpoint})
-
-
-@app.websocket("/ws")
+@app.websocket("/footprint")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     while True:
         data = await websocket.receive_text()
         await websocket.send_text(f"Message text was: {data}")
+
+
+@app.get("/footprint/settings")
+def read_root():
+    return {"websocket_endpoint": settings.websocket_endpoint}

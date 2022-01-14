@@ -1,4 +1,3 @@
-from typing import Optional
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from starlette.websockets import WebSocket
@@ -24,6 +23,7 @@ html = Template("""
 <html>
     <head>
         <title>Chat</title>
+        <link rel="shortcut icon" type="image/x-icon" href="data:image/x-icon;," />
     </head>
     <body>
         <h1>WebSocket Chat</h1>

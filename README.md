@@ -13,7 +13,7 @@ pip install -r requirements.txt
 Run the local development server:
 
 ```bash
-uvicorn main:app --reload
+uvicorn app.main:app --reload
 ```
 
 ## Deployment

@@ -3,6 +3,12 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from starlette.websockets import WebSocket
 
+# MODULES:
+from importlib import import_module
+moduleNames = ['template_module', 'another_module']
+import_module('src.template_module','template_module')
+import_module('src.another_module')
+
 app = FastAPI()
 
 @app.get("/")
@@ -54,3 +60,13 @@ async def websocket_endpoint(websocket: WebSocket):
     while True:
         data = await websocket.receive_text()
         await websocket.send_text(f"Message text was: {data}")
+
+@app.get("/modules")
+async def get():
+    interfaces = []
+    # for module in (__import__("src."+m) for m in moduleNames):
+    #     print(module)
+    interfaces.append(template_module.interface())
+    interfaces.append(another_module.interface())
+    module_json = { 'modules': interfaces}
+    return module_json

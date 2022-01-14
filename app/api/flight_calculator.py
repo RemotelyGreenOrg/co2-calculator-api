@@ -123,7 +123,7 @@ def build_response(
     )
 
 
-@router.post("/flight")
+@router.post("/flight", response_model=FlightCalculatorResponse)
 def flight_calculator(request: FlightCalculatorRequest) -> FlightCalculatorResponse:
     """Calculate CO2 emissions for a series of flights"""
     stage_summaries = calculate_carbon_stages(request)

@@ -19,14 +19,18 @@
 
       function onFormSubmit(event) {
         event.preventDefault();
-        if (input.value !== "") ws.send(input.value);
+        if (input.value !== "") ws.send(JSON.stringify({ message: input.value }));
         input.value = "";
       }
 
       function onMessage(event) {
-        const message = document.createElement("li");
-        message.textContent = event.data;
-        messages.appendChild(message);
+        const data = JSON.parse(event.data);
+
+        if (data.hasOwnProperty("message")) {
+          const message = document.createElement("li");
+          message.textContent = data.message;
+          messages.appendChild(message);
+        }
       }
 
       function init(settings) {

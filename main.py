@@ -29,9 +29,10 @@ async def websocket_endpoint(websocket: WebSocket):
     connections.append(websocket)
     try:
         while True:
-            data = await websocket.receive_text()
-            for connection in connections:
-                await connection.send_text(f"Message text was: {data}")
+            data = await websocket.receive_json()
+            if "message" in data:
+                for connection in connections:
+                    await connection.send_json(data)
     except WebSocketDisconnect:
         connections.remove(websocket)
 

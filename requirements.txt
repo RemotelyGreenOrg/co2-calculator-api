@@ -1,3 +1,4 @@
+git+https://github.com/RemotelyGreenOrg/video-conf-calculator.git#egg=vc_calculator
 starlette<=0.13.6
 uvicorn
 fastapi

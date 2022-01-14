@@ -1,7 +1,8 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from starlette.websockets import WebSocket
 from pydantic import BaseSettings
 from fastapi.staticfiles import StaticFiles
+from starlette.websockets import WebSocketDisconnect
 
 
 # These default settings get overridden by environment variables. @see https://fastapi.tiangolo.com/advanced/settings/
@@ -19,12 +20,18 @@ def read_root():
     return {"message": "Hello world!"}
 
 
+connections = []
 @app.websocket("/footprint")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    while True:
-        data = await websocket.receive_text()
-        await websocket.send_text(f"Message text was: {data}")
+    connections.append(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            for connection in connections:
+                await connection.send_text(f"Message text was: {data}")
+    except WebSocketDisconnect:
+        connections.remove(websocket)
 
 
 @app.get("/footprint/settings")

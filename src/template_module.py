@@ -31,17 +31,4 @@ class template_module(BaseModel):
         title = 'Template Module'
 
 def interface():
-    interface = {
-        "name": "Nearest Airport Finder",
-        "inputs": [
-            {
-                "name":"Location",
-                "type":"string"
-            }    
-        ],
-        "input-logic": "and",
-        "parameters": {},
-        "outputs": ["Departure Airport", "Arrival Airport"],
-        "output-logic": "or",
-    }
     return template_module.schema()

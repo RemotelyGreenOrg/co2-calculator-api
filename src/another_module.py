@@ -15,6 +15,6 @@ class another_module(BaseModel):
 
     class Config:
         title = 'Another Module'
-
+ 
 def interface():
     return another_module.schema()

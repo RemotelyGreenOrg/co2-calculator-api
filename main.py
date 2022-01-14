@@ -2,15 +2,24 @@ from typing import Optional
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from starlette.websockets import WebSocket
+from pydantic import BaseSettings
+from jinja2 import Template
 
+
+class Settings(BaseSettings):
+    websocket_endpoint: str = "ws://localhost:8000/ws"
+
+
+settings = Settings()
 app = FastAPI()
+
 
 @app.get("/")
 def read_root():
-    return {"Hello": "World!"}
+    return {"websocket_endpoint": settings.websocket_endpoint}
 
 
-html = """
+html = Template("""
 <!DOCTYPE html>
 <html>
     <head>
@@ -25,7 +34,7 @@ html = """
         <ul id='messages'>
         </ul>
         <script>
-            var ws = new WebSocket("wss://co2-calculator-api.herokuapp.com/ws");
+            var ws = new WebSocket("{{websocket_endpoint}}");
             ws.onmessage = function(event) {
                 var messages = document.getElementById('messages')
                 var message = document.createElement('li')
@@ -42,11 +51,13 @@ html = """
         </script>
     </body>
 </html>
-"""
+""")
+
 
 @app.get("/chat")
 async def get():
-    return HTMLResponse(html)
+    return HTMLResponse(html.render(websocket_endpoint=settings.websocket_endpoint))
+
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

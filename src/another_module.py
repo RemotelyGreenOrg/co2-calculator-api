@@ -8,7 +8,7 @@ class another_module(BaseModel):
     snap: int = Field(
         42,
         title='# Monitors',
-        description='Number of monitors connected to screen',
+        description='Number of monitors connected to PC',
         ge=1,
         lt=6,
     )

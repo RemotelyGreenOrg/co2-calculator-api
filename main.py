@@ -5,9 +5,13 @@ from starlette.websockets import WebSocket
 
 # MODULES:
 from importlib import import_module
-moduleNames = ['template_module', 'another_module']
-import_module('src.template_module','template_module')
-import_module('src.another_module')
+module_import_list = [
+    'src.template_module',
+    'src.another_module'
+]
+module_list = []
+for module in module_import_list:
+    module_list.append(import_module(module,__name__))
 
 app = FastAPI()
 
@@ -64,9 +68,8 @@ async def websocket_endpoint(websocket: WebSocket):
 @app.get("/modules")
 async def get():
     interfaces = []
-    # for module in (__import__("src."+m) for m in moduleNames):
-    #     print(module)
-    interfaces.append(template_module.interface())
-    interfaces.append(another_module.interface())
+    for module in module_list:
+        interfaces.append(module.interface())
+        print(module)
     module_json = { 'modules': interfaces}
     return module_json

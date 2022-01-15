@@ -41,7 +41,7 @@
         }
       }
 
-      const webSocketUrl = (window.location.protocol === "https" ? "wss" : "ws") + "://" + window.location.host;
+      const webSocketUrl = (window.location.protocol === "https:" ? "wss:" : "ws:") + "//" + window.location.host;
       const websocket = new WebSocket(webSocketUrl);
       websocket.addEventListener("message", onMessage);
 

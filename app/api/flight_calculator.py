@@ -1,3 +1,5 @@
+from typing import Any
+
 import pyproj
 from pydantic import BaseModel, conlist
 from fastapi import APIRouter
@@ -130,11 +132,14 @@ def flight_calculator(request: FlightCalculatorRequest) -> FlightCalculatorRespo
     response = build_response(stage_summaries)
     return response
 
-def interface():
-    return [FlightCalculatorRequest.schema(),FlightCalculatorResponse.schema()]
 
-def request():
+def interface() -> list[dict[str, Any]]:
+    return [FlightCalculatorRequest.schema(), FlightCalculatorResponse.schema()]
+
+
+def request() -> dict[str, Any]:
     return FlightCalculatorRequest.schema()
 
-def response():
+
+def response() -> dict[str, Any]:
     return FlightCalculatorResponse.schema()

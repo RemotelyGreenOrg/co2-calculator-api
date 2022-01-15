@@ -1,4 +1,6 @@
 from enum import Enum
+from typing import Any
+
 from pydantic import BaseModel, Field
 from fastapi import APIRouter
 
@@ -45,13 +47,13 @@ class TemplateModuleResponse(BaseModel):
         title = "Template Module Response"
 
 
-def interface():
+def interface() -> list[dict[str, Any]]:
     return [TemplateModuleRequest.schema(), TemplateModuleResponse.schema()]
 
 
-def request():
+def request() -> dict[str, Any]:
     return TemplateModuleRequest.schema()
 
 
-def response():
+def response() -> dict[str, Any]:
     return TemplateModuleResponse.schema()

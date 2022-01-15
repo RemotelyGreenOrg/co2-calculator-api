@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
@@ -30,13 +32,13 @@ class AnotherModuleResponse(BaseModel):
         title = "Another Module Response"
 
 
-def interface():
+def interface() -> list[dict[str, Any]]:
     return [AnotherModuleRequest.schema(), AnotherModuleResponse.schema()]
 
 
-def request():
+def request() -> dict[str, Any]:
     return AnotherModuleRequest.schema()
 
 
-def response():
+def response() -> dict[str, Any]:
     return AnotherModuleResponse.schema()

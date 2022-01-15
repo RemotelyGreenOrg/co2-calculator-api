@@ -1,7 +1,7 @@
-from typing import Any
-
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
+
+from app.api.module_interface import ModuleInterface
 
 router = APIRouter()
 
@@ -32,13 +32,15 @@ class AnotherModuleResponse(BaseModel):
         title = "Another Module Response"
 
 
-def interface() -> list[dict[str, Any]]:
-    return [request(), response()]
+@router.post("/another-module", response_model=AnotherModuleResponse)
+def entrypoint(request: AnotherModuleRequest) -> AnotherModuleResponse:
+    return AnotherModuleResponse()
 
 
-def request() -> dict[str, Any]:
-    return AnotherModuleRequest.schema()
-
-
-def response() -> dict[str, Any]:
-    return AnotherModuleResponse.schema()
+module_interface = ModuleInterface(
+    name="another_module",
+    entrypoint=entrypoint,
+    request_type=AnotherModuleRequest,
+    response_type=AnotherModuleResponse,
+    router=router,
+)

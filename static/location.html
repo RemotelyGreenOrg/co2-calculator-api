@@ -5,13 +5,76 @@
     <title>Location Input</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="shortcut icon" type="image/x-icon" href="data:image/x-icon;," />
-  </head>
-  <body>
-    <form>
-      <input type="text" id="location" name="location" autocomplete="off" required />
-    </form>
+    <script src="geoapify.js"></script>
+    <link rel="stylesheet" href="location.css">
+
     <script>
-      console.log("hi Ben");
+    function geoFindMe() {
+
+      const status = document.querySelector('#status');
+      const mapLink = document.querySelector('#map-link');
+
+      mapLink.href = '';
+      mapLink.textContent = '';
+
+      function success(position) {
+        const latitude  = position.coords.latitude;
+        const longitude = position.coords.longitude;
+
+        status.textContent = '';
+        mapLink.href = `https://www.openstreetmap.org/#map=18/${latitude}/${longitude}`;
+        mapLink.textContent = `Latitude: ${latitude} °, Longitude: ${longitude} °`;
+      }
+
+      function error() {
+        status.textContent = 'Unable to retrieve your location';
+      }
+
+      if(!navigator.geolocation) {
+        status.textContent = 'Geolocation is not supported by your browser';
+      } else {
+        status.textContent = 'Locating…';
+        navigator.geolocation.getCurrentPosition(success, error);
+      }
+
+    }
     </script>
+  </head>
+
+  <body>
+    <form id="user-details">
+      <div id="autocomplete-container">
+      Where you're joining from:
+      </div>
+      <br/>
+      <label for="participation-method">How you're joining:</label>
+      <select name="participation-method" id="participation-method" form="user-details">
+        <option value="online">Online</option>
+        <option value="in-person">In-person</option>
+      </select><br/>
+      <label for="username">What's your name (optional):</label>
+      <input type="text" name="username"><br/>
+      <input type="submit" name="submit" onclick="">
+      <input type="hidden" id="lattitude" name="lattitude" value="NaN"> 
+      <input type="hidden" id="longitude" name="longitude" value="NaN"> 
+    </form>
+
+    <button id = "find-me">Find my location</button><br/>
+    <p id = "status"></p>
+    <a id = "map-link" target="_blank"></a>
+
+    <script>
+    // Sets up the autocompletion for addresses
+    addressAutocomplete(document.getElementById("autocomplete-container"), (data) => {
+      console.log("Selected option: ");
+      console.log(data);
+    }, {
+      placeholder: "Enter an address here"
+    });
+
+    // Sets up the "find my location" button
+    document.querySelector('#find-me').addEventListener('click', geoFindMe);
+    </script>
+
   </body>
 </html>

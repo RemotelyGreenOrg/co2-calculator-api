@@ -1,5 +1,5 @@
-# MODULES:
-from importlib import import_module
+import itertools
+from typing import Any
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -7,15 +7,20 @@ from pydantic import BaseSettings
 from starlette.websockets import WebSocket
 from starlette.websockets import WebSocketDisconnect
 
-module_import_list = [
-    "app.api.template_module",
-    "app.api.another_module",
-    "app.api.flight_calculator",
-    "app.api.vc_calculator",
+from app.api import (
+    template_module,
+    another_module,
+    flight_calculator,
+    vc_calculator,
+)
+from app.api.module_interface import ModuleInterface
+
+modules: list[ModuleInterface] = [
+    template_module.module_interface,
+    another_module.module_interface,
+    flight_calculator.module_interface,
+    vc_calculator.module_interface,
 ]
-module_list = []
-for module in module_import_list:
-    module_list.append(import_module(module, __name__))
 
 
 # These default settings get overridden by environment variables.
@@ -102,33 +107,22 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 @app.get("/modules")
-async def get():
-    interfaces = []
-    for module in module_list:
-        for req_res in module.interface():  # interface has request and response
-            interfaces.append(req_res)
-    module_json = {"modules": interfaces}
-    return module_json
+async def get() -> dict[str, list[dict[str, Any]]]:
+    interfaces = [module.interface() for module in modules]
+    interfaces = list(itertools.chain.from_iterable(interfaces))
+    return {"modules": interfaces}
 
 
 @app.get("/requests")
-async def get():
-    requests = []
-    for module in module_list:
-        requests.append(module.request())
-    module_json = {"requests": requests}
-    return module_json
+async def get() -> dict[str, list[dict[str, Any]]]:
+    return {"requests": [module.request_schema() for module in modules]}
 
 
 @app.get("/responses")
-async def get():
-    responses = []
-    for module in module_list:
-        responses.append(module.response())
-    module_json = {"responses": responses}
-    return module_json
+async def get() -> dict[str, list[dict[str, Any]]]:
+    return {"responses": [module.response_schema() for module in modules]}
 
 
 # Include the module routers
-for module in module_list:
+for module in modules:
     app.include_router(module.router)

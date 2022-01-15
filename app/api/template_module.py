@@ -48,7 +48,7 @@ class TemplateModuleResponse(BaseModel):
 
 
 def interface() -> list[dict[str, Any]]:
-    return [TemplateModuleRequest.schema(), TemplateModuleResponse.schema()]
+    return [request(), response()]
 
 
 def request() -> dict[str, Any]:

@@ -16,7 +16,7 @@ def online_calculator(body: online.OnlineDetails) -> online.OnlineCalculatorResp
 
 
 def interface() -> list[dict[str, Any]]:
-    return [online.OnlineDetails.schema(), online.OnlineCalculatorResponse.schema()]
+    return [request(), response()]
 
 
 def request() -> dict[str, Any]:

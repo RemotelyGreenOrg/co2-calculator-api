@@ -70,8 +70,8 @@ async def websocket_endpoint(websocket: WebSocket):
 async def get():
     interfaces = []
     for module in module_list:
-        for ReqRes in module.interface():  # interface has request and response
-            interfaces.append(ReqRes)
+        for req_res in module.interface():  # interface has request and response
+            interfaces.append(req_res)
     module_json = {"modules": interfaces}
     return module_json
 

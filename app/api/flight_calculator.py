@@ -134,7 +134,7 @@ def flight_calculator(request: FlightCalculatorRequest) -> FlightCalculatorRespo
 
 
 def interface() -> list[dict[str, Any]]:
-    return [FlightCalculatorRequest.schema(), FlightCalculatorResponse.schema()]
+    return [request(), response()]
 
 
 def request() -> dict[str, Any]:

@@ -33,7 +33,7 @@ class AnotherModuleResponse(BaseModel):
 
 
 def interface() -> list[dict[str, Any]]:
-    return [AnotherModuleRequest.schema(), AnotherModuleResponse.schema()]
+    return [request(), response()]
 
 
 def request() -> dict[str, Any]:

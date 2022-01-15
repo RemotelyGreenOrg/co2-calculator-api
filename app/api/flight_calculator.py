@@ -1,6 +1,8 @@
+from typing import Any
+
 import pyproj
-from fastapi import APIRouter
 from pydantic import BaseModel, conlist
+from fastapi import APIRouter
 
 
 router = APIRouter()
@@ -129,3 +131,15 @@ def flight_calculator(request: FlightCalculatorRequest) -> FlightCalculatorRespo
     stage_summaries = calculate_carbon_stages(request)
     response = build_response(stage_summaries)
     return response
+
+
+def interface() -> list[dict[str, Any]]:
+    return [request(), response()]
+
+
+def request() -> dict[str, Any]:
+    return FlightCalculatorRequest.schema()
+
+
+def response() -> dict[str, Any]:
+    return FlightCalculatorResponse.schema()

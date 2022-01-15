@@ -1,37 +1,42 @@
-from enum import Enum
-from pydantic import BaseModel, Field
 from fastapi import APIRouter
+from pydantic import BaseModel, Field
 
 router = APIRouter()
 
-class another_moduleRequest(BaseModel):
+
+class AnotherModuleRequest(BaseModel):
     """
     This is the description of another module Request
     """
+
     monitors: int = Field(
         42,
-        title='# Monitors',
-        description='Number of monitors connected to PC',
+        title="# Monitors",
+        description="Number of monitors connected to PC",
         ge=1,
         lt=6,
     )
 
     class Config:
-        title = 'Another Module Request'
+        title = "Another Module Request"
 
-class another_moduleResponse(BaseModel):
+
+class AnotherModuleResponse(BaseModel):
     """
     This is the description of another module Response
     """
 
     class Config:
-        title = 'Another Module Response'
+        title = "Another Module Response"
+
 
 def interface():
-    return [another_moduleRequest.schema(),another_moduleResponse.schema()]
+    return [AnotherModuleRequest.schema(), AnotherModuleResponse.schema()]
+
 
 def request():
-    return another_moduleRequest.schema()
+    return AnotherModuleRequest.schema()
+
 
 def response():
-    return another_moduleResponse.schema()
+    return AnotherModuleResponse.schema()

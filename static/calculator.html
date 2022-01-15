@@ -89,12 +89,18 @@
         event.preventDefault();
         const event_name = event.target.querySelector("#event_name").value;
         const event_location = event.target.querySelector("#event_location").value;
-        websocket.send(JSON.stringify({ event_name, event_location }));
+        const data = { event_name, event_location };
+        console.log("websocket.send", data);
+        websocket.send(JSON.stringify(data));
       }
 
       function onEventJoinFormSubmit(event) {
         event.preventDefault();
-        console.log("onEventJoinFormSubmit");
+        const event_name = event.target.querySelector("#event_name").value;
+        const participant_location = event.target.querySelector("#participant_location").value;
+        const data = { event_name, participant_location };
+        console.log("websocket.send", data);
+        websocket.send(JSON.stringify(data));
       }
 
       function onMessage(event) {

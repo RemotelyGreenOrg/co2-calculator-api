@@ -38,6 +38,7 @@ def read_root():
 all_connections = []
 connections_by_event = []
 
+
 @app.websocket("/")
 async def websocket_endpoint(websocket: WebSocket):
     # The websocket endpoint is listening at the root URL and is accessed via the
@@ -54,21 +55,23 @@ async def websocket_endpoint(websocket: WebSocket):
                 event_participants = 0
                 for connection in connections_by_event:
                     if connection["event_name"] == data["event_name"]:
-                        event_participants += 1
-                print(event_participants)
+                        event_participants = event_participants + 1
+
                 if event_participants == 0:
-                    connections_by_event.append({"name": data["event_name"], "websocket": websocket})
+                    connections_by_event.append(
+                        {"event_name": data["event_name"], "websocket": websocket})
                     await websocket.send_json({
                         "event_name": data["event_name"],
                         "event_location": data["event_location"],
                         "event_participants": event_participants
                     })
-                elif event_participants > 1:
+                elif event_participants >= 1:
+                    # TODO add event_location
                     await websocket.send_json({
                         "event_name": data["event_name"],
-                        "event_location": data["event_location"],
+                        "participant_location": data["participant_location"],
                         "event_participants": event_participants,
-                        "calculation": 42 * event_participants
+                        "calculation": 42 * event_participants,
                     })
 
     except WebSocketDisconnect:

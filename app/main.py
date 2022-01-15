@@ -3,7 +3,6 @@ from starlette.websockets import WebSocket
 from pydantic import BaseSettings
 from fastapi.staticfiles import StaticFiles
 from starlette.websockets import WebSocketDisconnect
-
 from app.api import flight_calculator
 from app.api import vc_calculator
 
@@ -11,7 +10,7 @@ from app.api import vc_calculator
 # These default settings get overridden by environment variables.
 # @see https://fastapi.tiangolo.com/advanced/settings/
 class Settings(BaseSettings):
-    websocket_endpoint: str = "ws://localhost:8000/footprint"
+    host: str = "localhost:8000"
 
 
 settings = Settings()
@@ -21,13 +20,13 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
 def read_root():
-    return {"message": "Hello world!"}
+    return {"message": "OK"}
 
 
 connections = []
 
-
-@app.websocket("/footprint")
+# The websocket endpoint is listening at the root URL and is accessed via the Websocket protocol (ws or wss).
+@app.websocket("/")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     connections.append(websocket)
@@ -39,11 +38,6 @@ async def websocket_endpoint(websocket: WebSocket):
                     await connection.send_json(data)
     except WebSocketDisconnect:
         connections.remove(websocket)
-
-
-@app.get("/footprint/settings")
-def read_root():
-    return {"websocket_endpoint": settings.websocket_endpoint}
 
 
 app.include_router(flight_calculator.router)

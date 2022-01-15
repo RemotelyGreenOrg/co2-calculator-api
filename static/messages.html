@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Messages</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="shortcut icon" type="image/x-icon" href="data:image/x-icon;," />
+    <style>
+      #messages {
+        border: 1px solid rgb(118, 118, 118);
+        height: 10rem;
+        max-width: 20rem;
+        overflow-y: scroll;
+        list-style-type: none;
+        padding: 0.1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Messages</h1>
+    <ul id="messages"></ul>
+    <form>
+      <input type="text" id="message" name="message" autocomplete="off" required />
+      <button>Send</button>
+    </form>
+    <script>
+      function onFormSubmit(event) {
+        event.preventDefault();
+        if (messageInput.value !== "") websocket.send(JSON.stringify({ message: messageInput.value }));
+        messageInput.value = "";
+      }
+
+      function onMessage(event) {
+        const data = JSON.parse(event.data);
+
+        if (data.hasOwnProperty("message")) {
+          const time = new Date().toLocaleTimeString();
+          const message = document.createElement("li");
+          message.textContent = time + "\t" + data.message;
+          messages.appendChild(message);
+        }
+      }
+
+      const webSocketUrl = (window.location.protocol === "https" ? "wss" : "ws") + "://" + window.location.host;
+      const websocket = new WebSocket(webSocketUrl);
+      websocket.addEventListener("message", onMessage);
+
+      const form = document.querySelector("form");
+      form.addEventListener("submit", onFormSubmit);
+
+      const messageInput = form.querySelector("#message");
+      const messages = document.querySelector("#messages");
+    </script>
+  </body>
+</html>

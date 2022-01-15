@@ -50,13 +50,13 @@ async def websocket_endpoint(websocket: WebSocket):
                 for connection in all_connections:
                     await connection.send_json(data)
             if "event_name" in data:
-                connections_by_event.append(
-                    {"name": data["event_name"], "websocket": websocket}
-                )
-                # send back an initial calculation if available
-                await websocket.send_json(
-                    {"event_name": data["event_name"], "calculation": 1}
-                )
+                connections_by_event.append({"name": data["event_name"], "websocket": websocket})
+                await websocket.send_json({
+                    "event_name": data["event_name"],
+                    "event_location": data["event_location"],
+                    # send back an initial calculation if available
+                    "calculation": 42
+                })
 
     except WebSocketDisconnect:
         all_connections.remove(websocket)

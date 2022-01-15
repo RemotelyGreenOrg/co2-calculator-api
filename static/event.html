@@ -17,33 +17,25 @@
     </style>
   </head>
   <body>
-    <h1>Messages</h1>
-    <ul id="messages"></ul>
     <form>
-      <input type="text" id="message" name="message" autocomplete="off" required />
+      <label for="event_name">Your event's name:</label>
+      <input type="text" id="event_name" name="event_name" autocomplete="off" required />
       <button>Send</button>
     </form>
-    <button id="disconnect">Disconnect</button>
     <script>
       function onFormSubmit(event) {
         event.preventDefault();
-        if (messageInput.value !== "") websocket.send(JSON.stringify({ message: messageInput.value }));
-        messageInput.value = "";
+        const input = event.target.querySelector("#event_name");
+        if (input.value !== "") websocket.send(JSON.stringify({ event_name: input.value }));
+        input.value = "";
       }
 
       function onMessage(event) {
         const data = JSON.parse(event.data);
 
-        if (data.hasOwnProperty("message")) {
-          const time = new Date().toLocaleTimeString();
-          const message = document.createElement("li");
-          message.textContent = time + "\t" + data.message;
-          messages.appendChild(message);
+        if (data.hasOwnProperty("event_name")) {
+          console.log(data.event_name);
         }
-      }
-
-      function onDisconnectClick(event) {
-        
       }
 
       const webSocketUrl = (window.location.protocol === "https:" ? "wss:" : "ws:") + "//" + window.location.host;
@@ -52,12 +44,6 @@
 
       const form = document.querySelector("form");
       form.addEventListener("submit", onFormSubmit);
-
-      const messageInput = form.querySelector("#message");
-      const messages = document.querySelector("#messages");
-
-      const disconnectButton = document.querySelector("#disconnect");
-      disconnectButton.addEventListener("click", onDisconnectClick);
     </script>
   </body>
 </html>

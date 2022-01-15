@@ -6,7 +6,6 @@ from starlette.websockets import WebSocketDisconnect
 from app.api import flight_calculator
 from app.api import vc_calculator
 
-
 # These default settings get overridden by environment variables.
 # @see https://fastapi.tiangolo.com/advanced/settings/
 class Settings(BaseSettings):
@@ -23,21 +22,35 @@ def read_root():
     return {"message": "OK"}
 
 
-connections = []
-
+all_connections = []
+connections_by_event = []
 # The websocket endpoint is listening at the root URL and is accessed via the Websocket protocol (ws or wss).
+
+
 @app.websocket("/")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    connections.append(websocket)
+    all_connections.append(websocket)
     try:
         while True:
             data = await websocket.receive_json()
             if "message" in data:
-                for connection in connections:
+                for connection in all_connections:
                     await connection.send_json(data)
+            if "event_name" in data:
+                connections_by_event.append({"name": data["event_name"], "websocket": websocket})
+                # send back an initial calculation if available
+                await websocket.send_json({
+                    "event_name": data["event_name"],
+                    "calculation": 1
+                })
+
     except WebSocketDisconnect:
-        connections.remove(websocket)
+        print("Websocket disconnected")
+        all_connections.remove(websocket)
+        for connection in connections_by_event:
+            if connection["websocket"] == websocket:
+                connections_by_event.remove(connection)
 
 
 app.include_router(flight_calculator.router)

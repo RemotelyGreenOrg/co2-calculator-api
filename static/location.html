@@ -21,9 +21,17 @@
         const latitude  = position.coords.latitude;
         const longitude = position.coords.longitude;
 
+        const latField = document.querySelector('#latitude');
+        const lonField = document.querySelector('#longitude');
+        const srcField = document.querySelector('#lat-lon-source');
+        latField.value = latitude;
+        lonField.value = longitude;
+        srcField.value = "browser";
+
         status.textContent = '';
         mapLink.href = `https://www.openstreetmap.org/#map=18/${latitude}/${longitude}`;
         mapLink.textContent = `Latitude: ${latitude} °, Longitude: ${longitude} °`;
+
       }
 
       function error() {
@@ -38,10 +46,42 @@
       }
 
     }
+
+	function submitForm(){
+		const latField = document.querySelector('#latitude');
+		const lonField = document.querySelector('#longitude');
+
+		function logValues(){
+			var values = new Object();
+			values.latitude = latField.value;
+			values.longitude = lonField.value;
+			values.username = document.querySelector('#username')?.value;
+			values.method = document.querySelector('#participation-method')?.value;
+			values.address = document.querySelector('#address')?.value;
+			values.location_source = document.querySelector('#lat-long-source')?.value;
+			console.log(JSON.stringify(values));
+		}
+
+		if (document.querySelector('#lat-lon-source').value === "address"){
+			const addressField = document.querySelector('#address');
+			get_lat_lon_from_address(addressField.value)
+				.then(lat_lon => {
+					console.log("BEK location:", lat_lon);
+					latField.value = lat_lon.lat;
+					lonField.value = lat_lon.lon;
+					console.log("BEK location:", lat_lon);
+					logValues();
+				});
+		} else{
+			logValues();
+		}
+	}
+
     </script>
   </head>
 
   <body>
+    <button id = "find-me">Find my location</button><br/>
     <form id="user-details">
       <div id="autocomplete-container">
       Where you're joining from:
@@ -53,27 +93,33 @@
         <option value="in-person">In-person</option>
       </select><br/>
       <label for="username">What's your name (optional):</label>
-      <input type="text" name="username"><br/>
-      <input type="submit" name="submit" onclick="">
-      <input type="hidden" id="lattitude" name="lattitude" value="NaN"> 
-      <input type="hidden" id="longitude" name="longitude" value="NaN"> 
+      <input type="text" id="username" name="username"><br/>
+      <input type="button" value="Submit" name="submit" onclick="submitForm()">
+	  <br/>
+	  Set to hidden later on:
+	  Latitude: <input type="text" disabled autocomplete="off" id="latitude" name="latitude" value="NaN"> <br>
+	  Longitude: <input type="text" disabled autocomplete="off" id="longitude" name="longitude" value="NaN"> <br>
+      Source: <input type="text" disabled autocomplete="off" id="lat-lon-source" name="lat-lon-source" value="address"> 
     </form>
-
-    <button id = "find-me">Find my location</button><br/>
     <p id = "status"></p>
     <a id = "map-link" target="_blank"></a>
 
-    <script>
-    // Sets up the autocompletion for addresses
-    addressAutocomplete(document.getElementById("autocomplete-container"), (data) => {
-      console.log("Selected option: ");
-      console.log(data);
-    }, {
-      placeholder: "Enter an address here"
-    });
 
-    // Sets up the "find my location" button
-    document.querySelector('#find-me').addEventListener('click', geoFindMe);
+    <script>
+		// Sets up the autocompletion for addresses
+		const addressInput = addressAutocomplete(document.getElementById("autocomplete-container"), (data) => {
+		  console.log("Selected option: ");
+		  console.log(data);
+		}, {
+		  placeholder: "Enter an address here",
+		  name: "address",
+		});
+		addressInput.addEventListener("input", function(e) {
+			document.querySelector('#lat-lon-source').value = "address";
+		});
+
+		// Sets up the "find my location" button
+		document.querySelector('#find-me').addEventListener('click', geoFindMe);
     </script>
 
   </body>

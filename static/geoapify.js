@@ -1,6 +1,9 @@
 const geoapifyApiKey = "333a59e70c194914af823f45328e4a49";
 
 function addressAutocomplete(containerElement, callback, options) {
+//// Based on code from https://www.geoapify.com/tutorial/address-input-for-address-validation-and-address-verification-forms-tutorial
+////
+
     const MIN_ADDRESS_LENGTH = 3;
     const DEBOUNCE_DELAY = 300;
 
@@ -12,6 +15,8 @@ function addressAutocomplete(containerElement, callback, options) {
     // create input element
     const inputElement = document.createElement("input");
     inputElement.setAttribute("type", "text");
+    inputElement.setAttribute("name", options.name);
+    inputElement.setAttribute("id", options.name);
     inputElement.setAttribute("placeholder", options.placeholder);
     inputContainerElement.appendChild(inputElement);
 
@@ -209,14 +214,15 @@ function addressAutocomplete(containerElement, callback, options) {
         inputElement.dispatchEvent(event);
       }
     });
+    return inputElement;
   }
 
-
+async function get_lat_lon_from_address(address){
 var requestOptions = {
   method: 'GET',
   };
 
-  fetch("https://api.geoapify.com/v1/geocode/search?text=38%20Upper%20Montagu%20Street%2C%20Westminster%20W1H%201LJ%2C%20United%20Kingdom&apiKey=333a59e70c194914af823f45328e4a49", requestOptions)
-    .then(response => response.json())
-      .then(result => console.log(result))
-        .catch(error => console.log('error', error));
+  const url = `https://api.geoapify.com/v1/geocode/search?text=${address}&apiKey=${geoapifyApiKey}`;
+
+  return fetch(url, requestOptions).then(result => result.json());
+}

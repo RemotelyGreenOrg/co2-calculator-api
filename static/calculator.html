@@ -128,6 +128,11 @@
             viewEventButton.addEventListener("click", onViewEventClick);
             sectionCreateEventConfirmation.style.display = "block";
           }
+        } else if (data.hasOwnProperty("calculation")) {
+          sectionJoinEvent.style.display = "none";
+
+          sectionDashboard.querySelector("dd").innerHTML = data.calculation;
+          sectionDashboard.style.display = "block";
         }
       }
 

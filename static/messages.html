@@ -14,6 +14,10 @@
         list-style-type: none;
         padding: 0.1rem;
       }
+
+      #disconnect {
+        margin-top: 1rem;
+      }
     </style>
   </head>
   <body>
@@ -31,7 +35,7 @@
         messageInput.value = "";
       }
 
-      function onMessage(event) {
+      function onWebSocketMessage(event) {
         const data = JSON.parse(event.data);
 
         if (data.hasOwnProperty("message")) {
@@ -42,13 +46,20 @@
         }
       }
 
-      function onDisconnectClick(event) {
-        
+      function onWebSocketOpen(event) {
+        disconnectButton.style.visibility = "visible";
+      }
+
+      function onWebSocketClose(event) {
+        disconnectButton.style.visibility = "hidden";
+        Array.from(form.elements).forEach(formElement => (formElement.disabled = true));
       }
 
       const webSocketUrl = (window.location.protocol === "https:" ? "wss:" : "ws:") + "//" + window.location.host;
       const websocket = new WebSocket(webSocketUrl);
-      websocket.addEventListener("message", onMessage);
+      websocket.addEventListener("message", onWebSocketMessage);
+      websocket.addEventListener("close", onWebSocketClose);
+      websocket.addEventListener("open", onWebSocketOpen);
 
       const form = document.querySelector("form");
       form.addEventListener("submit", onFormSubmit);
@@ -57,7 +68,7 @@
       const messages = document.querySelector("#messages");
 
       const disconnectButton = document.querySelector("#disconnect");
-      disconnectButton.addEventListener("click", onDisconnectClick);
+      disconnectButton.addEventListener("click", event => websocket.close());
     </script>
   </body>
 </html>

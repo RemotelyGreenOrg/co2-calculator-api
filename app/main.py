@@ -46,7 +46,6 @@ async def websocket_endpoint(websocket: WebSocket):
                 })
 
     except WebSocketDisconnect:
-        print("Websocket disconnected")
         all_connections.remove(websocket)
         for connection in connections_by_event:
             if connection["websocket"] == websocket:

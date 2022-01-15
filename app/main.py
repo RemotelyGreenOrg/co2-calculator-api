@@ -6,18 +6,17 @@ from starlette.websockets import WebSocketDisconnect
 
 # MODULES:
 from importlib import import_module
+
 module_import_list = [
-    'app.api.template_module',
-    'app.api.another_module',
-    'app.api.flight_calculator',
-    'app.api.vc_calculator'
+    "app.api.template_module",
+    "app.api.another_module",
+    "app.api.flight_calculator",
+    "app.api.vc_calculator",
 ]
 module_list = []
 for module in module_import_list:
-    module_list.append(import_module(module,__name__))
+    module_list.append(import_module(module, __name__))
 
-# from app.api import flight_calculator
-# from app.api import vc_calculator
 
 # These default settings get overridden by environment variables.
 # @see https://fastapi.tiangolo.com/advanced/settings/
@@ -37,11 +36,11 @@ def read_root():
 
 all_connections = []
 connections_by_event = []
-# The websocket endpoint is listening at the root URL and is accessed via the Websocket protocol (ws or wss).
-
 
 @app.websocket("/")
 async def websocket_endpoint(websocket: WebSocket):
+    # The websocket endpoint is listening at the root URL and is accessed via the
+    # Websocket protocol (ws or wss).
     await websocket.accept()
     all_connections.append(websocket)
     try:
@@ -51,12 +50,13 @@ async def websocket_endpoint(websocket: WebSocket):
                 for connection in all_connections:
                     await connection.send_json(data)
             if "event_name" in data:
-                connections_by_event.append({"name": data["event_name"], "websocket": websocket})
+                connections_by_event.append(
+                    {"name": data["event_name"], "websocket": websocket}
+                )
                 # send back an initial calculation if available
-                await websocket.send_json({
-                    "event_name": data["event_name"],
-                    "calculation": 1
-                })
+                await websocket.send_json(
+                    {"event_name": data["event_name"], "calculation": 1}
+                )
 
     except WebSocketDisconnect:
         print("Websocket disconnected")
@@ -65,30 +65,34 @@ async def websocket_endpoint(websocket: WebSocket):
             if connection["websocket"] == websocket:
                 connections_by_event.remove(connection)
 
+
 @app.get("/modules")
 async def get():
     interfaces = []
     for module in module_list:
-        for ReqRes in module.interface(): # interface has request and response
+        for ReqRes in module.interface():  # interface has request and response
             interfaces.append(ReqRes)
-    module_json = { 'modules': interfaces}
+    module_json = {"modules": interfaces}
     return module_json
+
 
 @app.get("/requests")
 async def get():
     requests = []
     for module in module_list:
         requests.append(module.request())
-    module_json = { 'requests': requests}
+    module_json = {"requests": requests}
     return module_json
+
 
 @app.get("/responses")
 async def get():
     responses = []
     for module in module_list:
         responses.append(module.response())
-    module_json = { 'responses': responses}
+    module_json = {"responses": responses}
     return module_json
+
 
 # Include the module routers
 for module in module_list:

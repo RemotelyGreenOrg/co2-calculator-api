@@ -1,12 +1,11 @@
 import json
 
-from typing import Any
-
 import pyproj
 import reverse_geocoder
 from fastapi import APIRouter
 from pydantic import BaseModel, conlist, confloat
 
+from app.api.module_interface import ModuleInterface
 
 router = APIRouter()
 
@@ -251,13 +250,10 @@ def flight_calculator(request: FlightCalculatorRequest) -> FlightCalculatorRespo
     return response
 
 
-def interface() -> list[dict[str, Any]]:
-    return [request(), response()]
-
-
-def request() -> dict[str, Any]:
-    return FlightCalculatorRequest.schema()
-
-
-def response() -> dict[str, Any]:
-    return FlightCalculatorResponse.schema()
+module_interface = ModuleInterface(
+    name="flight_calculator",
+    entrypoint=flight_calculator,
+    request_type=FlightCalculatorRequest,
+    response_type=FlightCalculatorResponse,
+    router=router,
+)

@@ -222,7 +222,9 @@ var requestOptions = {
   method: 'GET',
   };
 
-  const url = `https://api.geoapify.com/v1/geocode/search?text=${address}&apiKey=${geoapifyApiKey}`;
+  const url = `https://api.geoapify.com/v1/geocode/search?text=${address}&apiKey=${geoapifyApiKey}&format=json`;
 
-  return fetch(url, requestOptions).then(result => result.json());
+  return fetch(url, requestOptions)
+	.then(response => response.json())
+	.then(response => response.results[0]);
 }

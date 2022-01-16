@@ -66,10 +66,8 @@
 			const addressField = document.querySelector('#address');
 			get_lat_lon_from_address(addressField.value)
 				.then(lat_lon => {
-					console.log("BEK location:", lat_lon);
 					latField.value = lat_lon.lat;
 					lonField.value = lat_lon.lon;
-					console.log("BEK location:", lat_lon);
 					logValues();
 				});
 		} else{

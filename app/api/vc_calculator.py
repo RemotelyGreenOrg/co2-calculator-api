@@ -1,6 +1,7 @@
+from typing import Any
+
 import vc_calculator.interface as online
 from fastapi import APIRouter
-
 
 router = APIRouter()
 
@@ -12,3 +13,15 @@ def online_calculator(body: online.OnlineDetails) -> online.OnlineCalculatorResp
     devices = [online.make_device(d) for d in devices]
     results = online.compute(devices, body.bandwidth)
     return results
+
+
+def interface() -> list[dict[str, Any]]:
+    return [request(), response()]
+
+
+def request() -> dict[str, Any]:
+    return online.OnlineDetails.schema()
+
+
+def response() -> dict[str, Any]:
+    return online.OnlineCalculatorResponse.schema()

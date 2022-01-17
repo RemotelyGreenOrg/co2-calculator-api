@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Messages</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="shortcut icon" type="image/x-icon" href="data:image/x-icon;," />
+    <link rel="stylesheet" href="/static/basic.css" />
+    <style>
+      /*
+      ----------------------------------------------------------
+      Page specific styling
+      ----------------------------------------------------------
+      */
+      section {
+        max-width: 30rem;
+        min-width: 15rem;
+        padding: 1rem;
+        position: relative;
+      }
+
+      @media (min-width: 30rem) {
+        section {
+          border: 1px solid #ced4da;
+          border-radius: 0.25rem;
+          margin: 2rem auto;
+        }
+      }
+
+      section > h1 {
+        margin-top: 0;
+      }
+
+      form > div {
+        margin-bottom: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <section id="create-event" style="display: none">
+      <h1>Create Event</h1>
+      <form>
+        <div>
+          <label for="event_name">Your event's name:</label>
+          <input type="text" id="event_name" name="event_name" autocomplete="off" required />
+        </div>
+        <div>
+          <label for="event_location">Your event's location:</label>
+          <input type="text" id="event_location" name="event_location" autocomplete="off" required />
+        </div>
+        <p>
+          <small>If there's a physical centre where people can travel to, enter this. If the event is fully online, enter your best guess at where you would have been if you'd have met physically.</small>
+        </p>
+        <button>Create event</button>
+      </form>
+    </section>
+
+    <section id="create-event-confirmation" style="display: none">
+      <h1>Event created</h1>
+      <input id="url" type="text" readonly />
+      <p>Copy this URL to share with others.</p>
+      <button>Join event</button>
+    </section>
+
+    <section id="join-event" style="display: none">
+      <h1>Join event</h1>
+      <form>
+        <div>
+          <label for="event_name">Your event's name:</label>
+          <input type="text" id="event_name" name="event_name" autocomplete="off" required />
+        </div>
+        <div>
+          <label for="participant_location">Your location:</label>
+          <input type="text" id="participant_location" name="participant_location" autocomplete="off" required />
+        </div>
+        <button>Join event</button>
+      </form>
+    </section>
+
+    <section id="dashboard" style="display: none">
+      <h1>Dashboard</h1>
+      <dl>
+        <dt>CO2 Emissions</dt>
+        <dd id="co2"></dd>
+        <dt>Number of participants</dt>
+        <dd id="n-participants"></dd>
+        <dt>Participant locations</dt>
+        <dd id="participant-locations"></dd>
+      </dl>
+    </section>
+    <script>
+      function onEventCreateFormSubmit(event) {
+        event.preventDefault();
+        const event_name = event.target.querySelector("#event_name").value;
+        const event_location = event.target.querySelector("#event_location").value;
+        const data = { event_name, event_location };
+        console.log("websocket.send", data);
+        websocket.send(JSON.stringify(data));
+      }
+
+      function onEventJoinFormSubmit(event) {
+        event.preventDefault();
+        const event_name = event.target.querySelector("#event_name").value;
+        const participant_location = event.target.querySelector("#participant_location").value;
+        const data = { event_name, participant_location };
+        console.log("websocket.send", data);
+        websocket.send(JSON.stringify(data));
+      }
+
+      function onMessage(event) {
+        const data = JSON.parse(event.data);
+        console.log(data);
+
+        if (data.hasOwnProperty("event_name") && data.hasOwnProperty("event_location") && data.hasOwnProperty("event_participants")) {
+          const newEventCreated = data.event_participants === 0;
+          if (newEventCreated) {
+            // Clean up create event section
+            createEventForm.removeEventListener("submit", onEventCreateFormSubmit);
+            Array.from(createEventForm.elements).forEach(formElement => (formElement.disabled = true));
+            sectionCreateEvent.style.display = "none";
+
+            // Populate and show confirmation section
+            const url = new URL(document.location);
+            url.searchParams.append("event_name", data.event_name);
+
+            window.history.pushState({}, "", url);
+
+            const urlCopy = sectionCreateEventConfirmation.querySelector("#url");
+            urlCopy.value = url.toString();
+
+            const viewEventButton = sectionCreateEventConfirmation.querySelector("button");
+            viewEventButton.addEventListener("click", onViewEventClick);
+            sectionCreateEventConfirmation.style.display = "block";
+          }
+        } else if (data.hasOwnProperty("calculation")) {
+          sectionJoinEvent.style.display = "none";
+
+          sectionDashboard.querySelector("#co2").innerHTML = data.calculation;
+          sectionDashboard.style.display = "block";
+
+          sectionDashboard.querySelector("#n-participants").innerHTML = data.event_participants;
+          sectionDashboard.style.display = "block";
+
+          sectionDashboard.querySelector("#participant-locations").innerHTML = data.participant_locations;
+          sectionDashboard.style.display = "block";
+        }
+      }
+
+      function onViewEventClick(event) {
+        // Clean up event confirmation section
+        event.target.removeEventListener("click", onViewEventClick);
+        sectionCreateEventConfirmation.style.display = "none";
+
+        sectionJoinEvent.style.display = "block";
+
+        const params = new URLSearchParams(window.location.search);
+        sectionJoinEvent.querySelector("#event_name").value = params.get("event_name");
+      }
+
+      const webSocketUrl = (window.location.protocol === "https:" ? "wss:" : "ws:") + "//" + window.location.host;
+      const websocket = new WebSocket(webSocketUrl);
+      websocket.addEventListener("message", onMessage);
+
+      const sectionCreateEvent = document.querySelector("#create-event");
+      const createEventForm = sectionCreateEvent.querySelector("form");
+      createEventForm.addEventListener("submit", onEventCreateFormSubmit);
+
+      const sectionCreateEventConfirmation = document.querySelector("#create-event-confirmation");
+
+      const sectionJoinEvent = document.querySelector("#join-event");
+      const joinEventForm = sectionJoinEvent.querySelector("form");
+      joinEventForm.addEventListener("submit", onEventJoinFormSubmit);
+
+      const sectionDashboard = document.querySelector("#dashboard");
+
+      // Fill in the form with the URL parameter
+      const params = new URLSearchParams(window.location.search);
+      if (params.has("event_name")) {
+        // show join
+        sectionJoinEvent.querySelector("#event_name").value = params.get("event_name");
+        sectionJoinEvent.style.display = "block";
+      } else {
+        // show create event
+        sectionCreateEvent.style.display = "block";
+      }
+    </script>
+  </body>
+</html>

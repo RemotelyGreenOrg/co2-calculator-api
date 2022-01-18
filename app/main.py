@@ -101,25 +101,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 # ==================================================================
-# Modules
-
-
-@app.get("/modules")
-async def get() -> dict[str, list[dict[str, Any]]]:
-    return {"modules": modules.interfaces}
-
-
-@app.get("/requests")
-async def get() -> dict[str, list[dict[str, Any]]]:
-    return {"requests": modules.request_schemas}
-
-
-@app.get("/responses")
-async def get() -> dict[str, list[dict[str, Any]]]:
-    return {"responses": modules.response_schemas}
-
-
-# Register routers
-modules.include_routers(app)
+# Register modules and routers
+modules.register(app)
 app.include_router(cost_aggregator.router)
 # ==================================================================

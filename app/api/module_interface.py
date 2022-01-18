@@ -60,6 +60,29 @@ class ModuleInterfaces:
     def response_schemas(self: "ModuleInterfaces") -> list[dict[str, Any]]:
         return [module.response_schema for module in self.modules]
 
-    def include_routers(self: "ModuleInterfaces", app: FastAPI) -> None:
+    async def get_modules(self: "ModuleInterfaces") -> dict[str, list[dict[str, Any]]]:
+        return {"modules": self.interfaces}
+
+    async def get_requests(self: "ModuleInterfaces") -> dict[str, list[dict[str, Any]]]:
+        return {"requests": self.request_schemas}
+
+    async def get_responses(self: "ModuleInterfaces") -> dict[str, list[dict[str, Any]]]:
+        return {"responses": self.response_schemas}
+
+    def register(self: "ModuleInterfaces", app: FastAPI) -> None:
+        router = APIRouter()
+
         for module in self.modules:
-            app.include_router(module.router)
+            router.add_api_route(
+                path=module.path,
+                endpoint=module.entrypoint,
+                name=module.name,
+                methods=[module.method],
+                response_model=module.response_model,
+                **(module.router_args or {}),
+            )
+
+        app.add_route("/modules", self.get_modules)
+        app.add_route("/requests", self.get_requests)
+        app.add_route("/responses", self.get_responses)
+        app.include_router(router)

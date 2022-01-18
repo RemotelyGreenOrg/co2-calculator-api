@@ -1,4 +1,3 @@
-import itertools
 from typing import Any
 
 from fastapi import FastAPI
@@ -13,14 +12,7 @@ from app.api import (
     flight_calculator,
     vc_calculator,
 )
-from app.api.module_interface import ModuleInterface
-
-modules: list[ModuleInterface] = [
-    template_module.module_interface,
-    another_module.module_interface,
-    flight_calculator.module_interface,
-    vc_calculator.module_interface,
-]
+from app.api.module_interface import Modules
 
 
 # These default settings get overridden by environment variables.
@@ -90,14 +82,15 @@ async def websocket_endpoint(websocket: WebSocket):
                     # TODO add event_location
                     for c in connections_by_event:
                         await c["websocket"].send_json(
-                            {
-                                "event_name": data["event_name"],
-                                "participant_location": data["participant_location"],
+
+                                {
+                            "event_name": data["event_name"],
+                            "participant_location": data["participant_location"],
                                 "participant_locations": participant_locations,
-                                "event_participants": event_participants,
-                                "calculation": 42 * event_participants,
-                            }
-                        )
+                            "event_participants": event_participants,
+                            "calculation": 42 * event_participants,
+                        }
+                    )
 
     except WebSocketDisconnect:
         all_connections.remove(websocket)
@@ -106,23 +99,33 @@ async def websocket_endpoint(websocket: WebSocket):
                 connections_by_event.remove(connection)
 
 
+# ==================================================================
+# Modules
+modules = Modules(
+    [
+        another_module.module,
+        flight_calculator.module,
+        template_module.module,
+        vc_calculator.module,
+    ]
+)
+
+
 @app.get("/modules")
 async def get() -> dict[str, list[dict[str, Any]]]:
-    interfaces = [module.interface() for module in modules]
-    interfaces = list(itertools.chain.from_iterable(interfaces))
-    return {"modules": interfaces}
+    return {"modules": modules.interfaces}
 
 
 @app.get("/requests")
 async def get() -> dict[str, list[dict[str, Any]]]:
-    return {"requests": [module.request_schema() for module in modules]}
+    return {"requests": modules.request_schemas}
 
 
 @app.get("/responses")
 async def get() -> dict[str, list[dict[str, Any]]]:
-    return {"responses": [module.response_schema() for module in modules]}
+    return {"responses": modules.response_schemas}
 
 
-# Include the module routers
-for module in modules:
-    app.include_router(module.router)
+# Register modules
+modules.include_routers(app)
+# ==================================================================

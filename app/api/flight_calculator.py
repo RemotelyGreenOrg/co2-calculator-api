@@ -5,7 +5,7 @@ import reverse_geocoder
 from fastapi import APIRouter
 from pydantic import BaseModel, conlist, confloat
 
-from app.api.module_interface import ModuleInterface
+from app.api.module_interface import Module
 
 router = APIRouter()
 
@@ -250,7 +250,7 @@ def flight_calculator(request: FlightCalculatorRequest) -> FlightCalculatorRespo
     return response
 
 
-module_interface = ModuleInterface(
+module = Module(
     name="flight_calculator",
     entrypoint=flight_calculator,
     request_type=FlightCalculatorRequest,

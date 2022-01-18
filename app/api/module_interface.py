@@ -1,9 +1,7 @@
-import itertools
 from typing import Any, Type, Generic, TypeVar, Callable
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter
 from pydantic import BaseModel
-
 
 RequestT = TypeVar("RequestT", bound=BaseModel)
 ResponseT = TypeVar("ResponseT", bound=BaseModel)
@@ -43,30 +41,3 @@ class ModuleInterface(Generic[RequestT, ResponseT]):
     @property
     def interface(self: "ModuleInterface") -> tuple[dict[str, Any], dict[str, Any]]:
         return self.request_schema, self.response_schema
-
-
-class Modules:
-    def __init__(self: "Modules", modules: list[ModuleInterface]) -> None:
-        self._modules = modules
-
-    @property
-    def modules(self: "Modules") -> list[ModuleInterface]:
-        return self._modules
-
-    @property
-    def interfaces(self: "Modules") -> list[dict[str, Any]]:
-        interfaces = [module.interface for module in self.modules]
-        interfaces = list(itertools.chain.from_iterable(interfaces))
-        return interfaces
-
-    @property
-    def request_schemas(self: "Modules") -> list[dict[str, Any]]:
-        return [module.request_schema for module in self.modules]
-
-    @property
-    def response_schemas(self: "Modules") -> list[dict[str, Any]]:
-        return [module.response_schema for module in self.modules]
-
-    def include_routers(self: "Modules", app: FastAPI) -> None:
-        for module in self.modules:
-            app.include_router(module.router)

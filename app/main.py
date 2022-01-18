@@ -6,13 +6,7 @@ from pydantic import BaseSettings
 from starlette.websockets import WebSocket
 from starlette.websockets import WebSocketDisconnect
 
-from app.api import (
-    template_module,
-    another_module,
-    flight_calculator,
-    vc_calculator,
-)
-from app.api.module_interface import Modules
+from app.api.modules import modules
 
 
 class Settings(BaseSettings):
@@ -106,14 +100,6 @@ async def websocket_endpoint(websocket: WebSocket):
 
 # ==================================================================
 # Modules
-modules = Modules(
-    [
-        another_module.module,
-        flight_calculator.module,
-        template_module.module,
-        vc_calculator.module,
-    ]
-)
 
 
 @app.get("/modules")

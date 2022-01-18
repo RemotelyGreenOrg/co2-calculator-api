@@ -130,17 +130,12 @@ async def cost_aggregator(request: CostAggregatorRequest) -> CostAggregatorRespo
         cost_items = []
         total_carbon_kg = 0.0
         for cost_item in cost_path.cost_items:
-            print(cost_item.module)
             # Looking for the module with this return type
             for module in module_list:
-                print(module.request()["title"])
                 if cost_item.module == module.request()["title"]:
-                    print("Found it")
                     # Calling the code that computes the information
                     # Todo: extend and use module interface
                     if cost_item.module == "OnlineDetails":
-                        print("Hello")
-                        print(cost_item.properties)
                         from app.api.vc_calculator import online_calculator
                         from vc_calculator.interface import OnlineDetails
                         res = online_calculator(
@@ -148,13 +143,11 @@ async def cost_aggregator(request: CostAggregatorRequest) -> CostAggregatorRespo
                         import statistics
                         total_carbon_kg += statistics.mean(
                             [res.total_emissions.low, res.total_emissions.high])
-                        print(res)
                     elif cost_item.module == "FlightCalculatorRequest":
                         from app.api.flight_calculator import flight_calculator, FlightCalculatorRequest
                         res = flight_calculator(
                             FlightCalculatorRequest(**cost_item.properties))
                         total_carbon_kg += res.total_carbon_kg
-                        print(res)
             cost_items.append( CostItemResponse(cost_item = cost_item) )
         cost_paths.append( CostPathResponse(cost_items = cost_items, title = cost_path.title, total_carbon_kg = total_carbon_kg) )
     return CostAggregatorResponse(cost_paths = cost_paths)

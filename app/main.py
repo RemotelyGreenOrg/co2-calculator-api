@@ -15,9 +15,12 @@ from app.api import (
 from app.api.module_interface import Modules
 
 
-# These default settings get overridden by environment variables.
-# @see https://fastapi.tiangolo.com/advanced/settings/
 class Settings(BaseSettings):
+    """Default settings for app
+
+    These default settings get overridden by environment variables.
+    @see https://fastapi.tiangolo.com/advanced/settings/
+    """
     host: str = "localhost:8000"
 
 
@@ -37,8 +40,10 @@ connections_by_event = []
 
 @app.websocket("/")
 async def websocket_endpoint(websocket: WebSocket):
-    # The websocket endpoint is listening at the root URL and is accessed via the
-    # Websocket protocol (ws or wss).
+    """
+    The websocket endpoint is listening at the root URL and is accessed via the
+    Websocket protocol (ws or wss).
+    """
     await websocket.accept()
     all_connections.append(websocket)
     try:

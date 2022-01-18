@@ -5,13 +5,120 @@
     <title>Location Input</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="shortcut icon" type="image/x-icon" href="data:image/x-icon;," />
-  </head>
-  <body>
-    <form>
-      <input type="text" id="location" name="location" autocomplete="off" required />
-    </form>
+    <script src="geoapify.js"></script>
+    <link rel="stylesheet" href="location.css">
+
     <script>
-      console.log("hi Ben");
+    function geoFindMe() {
+
+      const status = document.querySelector('#status');
+      const mapLink = document.querySelector('#map-link');
+
+      mapLink.href = '';
+      mapLink.textContent = '';
+
+      function success(position) {
+        const latitude  = position.coords.latitude;
+        const longitude = position.coords.longitude;
+
+        const latField = document.querySelector('#latitude');
+        const lonField = document.querySelector('#longitude');
+        const srcField = document.querySelector('#lat-lon-source');
+        latField.value = latitude;
+        lonField.value = longitude;
+        srcField.value = "browser";
+
+        status.textContent = '';
+        mapLink.href = `https://www.openstreetmap.org/#map=18/${latitude}/${longitude}`;
+        mapLink.textContent = `Latitude: ${latitude} °, Longitude: ${longitude} °`;
+
+      }
+
+      function error() {
+        status.textContent = 'Unable to retrieve your location';
+      }
+
+      if(!navigator.geolocation) {
+        status.textContent = 'Geolocation is not supported by your browser';
+      } else {
+        status.textContent = 'Locating…';
+        navigator.geolocation.getCurrentPosition(success, error);
+      }
+
+    }
+
+	function submitForm(){
+		const latField = document.querySelector('#latitude');
+		const lonField = document.querySelector('#longitude');
+
+		function logValues(){
+			var values = new Object();
+			values.latitude = latField.value;
+			values.longitude = lonField.value;
+			values.username = document.querySelector('#username')?.value;
+			values.method = document.querySelector('#participation-method')?.value;
+			values.address = document.querySelector('#address')?.value;
+			values.location_source = document.querySelector('#lat-long-source')?.value;
+			console.log(JSON.stringify(values));
+		}
+
+		if (document.querySelector('#lat-lon-source').value === "address"){
+			const addressField = document.querySelector('#address');
+			get_lat_lon_from_address(addressField.value)
+				.then(lat_lon => {
+					latField.value = lat_lon.lat;
+					lonField.value = lat_lon.lon;
+					logValues();
+				});
+		} else{
+			logValues();
+		}
+	}
+
     </script>
+  </head>
+
+  <body>
+    <button id = "find-me">Find my location</button><br/>
+    <form id="user-details">
+      <div id="autocomplete-container">
+      Where you're joining from:
+      </div>
+      <br/>
+      <label for="participation-method">How you're joining:</label>
+      <select name="participation-method" id="participation-method" form="user-details">
+        <option value="online">Online</option>
+        <option value="in-person">In-person</option>
+      </select><br/>
+      <label for="username">What's your name (optional):</label>
+      <input type="text" id="username" name="username"><br/>
+      <input type="button" value="Submit" name="submit" onclick="submitForm()">
+	  <br/>
+	  Set to hidden later on:
+	  Latitude: <input type="text" disabled autocomplete="off" id="latitude" name="latitude" value="NaN"> <br>
+	  Longitude: <input type="text" disabled autocomplete="off" id="longitude" name="longitude" value="NaN"> <br>
+      Source: <input type="text" disabled autocomplete="off" id="lat-lon-source" name="lat-lon-source" value="address"> 
+    </form>
+    <p id = "status"></p>
+    <a id = "map-link" target="_blank"></a>
+
+
+    <script>
+		// Sets up the autocompletion for addresses
+		const addressInput = addressAutocomplete(document.getElementById("autocomplete-container"), (data) => {
+		  console.log("Selected option: ");
+		  console.log(data);
+		}, {
+		  placeholder: "Enter an address here",
+		  name: "address",
+		});
+		addressInput.addEventListener("input", function(e) {
+			document.querySelector('#lat-lon-source').value = "address";
+		});
+
+		// Sets up the "find my location" button
+		document.querySelector('#find-me').addEventListener('click', geoFindMe);
+    </script>
+
   </body>
 </html>

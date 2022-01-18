@@ -1,12 +1,11 @@
-from sqlite3 import connect
-from fastapi import FastAPI
-from starlette.websockets import WebSocket
-from pydantic import BaseSettings
-from fastapi.staticfiles import StaticFiles
-from starlette.websockets import WebSocketDisconnect
-
 # MODULES:
 from importlib import import_module
+
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseSettings
+from starlette.websockets import WebSocket
+from starlette.websockets import WebSocketDisconnect
 
 module_import_list = [
     "app.api.template_module",

@@ -81,7 +81,11 @@
       <h1>Dashboard</h1>
       <dl>
         <dt>CO2 Emissions</dt>
-        <dd></dd>
+        <dd id="co2"></dd>
+        <dt>Number of participants</dt>
+        <dd id="n-participants"></dd>
+        <dt>Participant locations</dt>
+        <dd id="participant-locations"></dd>
       </dl>
     </section>
     <script>
@@ -89,12 +93,18 @@
         event.preventDefault();
         const event_name = event.target.querySelector("#event_name").value;
         const event_location = event.target.querySelector("#event_location").value;
-        websocket.send(JSON.stringify({ event_name, event_location }));
+        const data = { event_name, event_location };
+        console.log("websocket.send", data);
+        websocket.send(JSON.stringify(data));
       }
 
       function onEventJoinFormSubmit(event) {
         event.preventDefault();
-        console.log("onEventJoinFormSubmit");
+        const event_name = event.target.querySelector("#event_name").value;
+        const participant_location = event.target.querySelector("#participant_location").value;
+        const data = { event_name, participant_location };
+        console.log("websocket.send", data);
+        websocket.send(JSON.stringify(data));
       }
 
       function onMessage(event) {
@@ -122,6 +132,17 @@
             viewEventButton.addEventListener("click", onViewEventClick);
             sectionCreateEventConfirmation.style.display = "block";
           }
+        } else if (data.hasOwnProperty("calculation")) {
+          sectionJoinEvent.style.display = "none";
+
+          sectionDashboard.querySelector("#co2").innerHTML = data.calculation;
+          sectionDashboard.style.display = "block";
+
+          sectionDashboard.querySelector("#n-participants").innerHTML = data.event_participants;
+          sectionDashboard.style.display = "block";
+
+          sectionDashboard.querySelector("#participant-locations").innerHTML = data.participant_locations;
+          sectionDashboard.style.display = "block";
         }
       }
 

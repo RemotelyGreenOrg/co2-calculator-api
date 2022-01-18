@@ -37,6 +37,7 @@ class CostAggregatorRequest(BaseModel):
 
 class CostItemResponse(BaseModel):
     cost_item: CostItem
+    response: Any
 
 
 class CostPathResponse(BaseModel):
@@ -109,7 +110,8 @@ async def cost_aggregator(request: CostAggregatorRequest) -> CostAggregatorRespo
             item, module = cost_item.item, cost_item.module
             response = await module.entrypoint(cost_item.request)
             total_carbon_kg += module.get_total_carbon_kg(response)
-            cost_item_responses.append(CostItemResponse(cost_item=item))
+            item_response = CostItemResponse(cost_item=item, response=response)
+            cost_item_responses.append(item_response)
 
         cost_path_responses.append(
             CostPathResponse(

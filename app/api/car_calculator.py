@@ -17,7 +17,7 @@ class FuelType(str, Enum):
     hybrid = "Hybrid"
     natruralgas = "Natural Gas"
     petrol = "Petrol"
-    plugin = "Plugi-In Hybrid"
+    plugin = "Plug-In Hybrid"
 
 
 class CarType(str, Enum):

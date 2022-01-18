@@ -82,7 +82,7 @@ def build_response(
 
 @router.post("/car", response_model=CarCalculatorResponse)
 def car_calculator(request: CarCalculatorRequest) -> CarCalculatorResponse:
-    """Calculate CO2 emissions for a series of car trips"""
+    """Calculate CO2 emissions for a car trips"""
     response = build_response(request)
     return response
 

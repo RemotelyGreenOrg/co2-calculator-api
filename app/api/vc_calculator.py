@@ -1,7 +1,7 @@
 import vc_calculator.interface as online
 from fastapi import APIRouter
 
-from app.api.module_interface import Module
+from app.api.module_interface import ModuleInterface
 
 router = APIRouter()
 
@@ -15,7 +15,7 @@ def online_calculator(body: online.OnlineDetails) -> online.OnlineCalculatorResp
     return results
 
 
-module = Module(
+module = ModuleInterface(
     name="online_calculator",
     entrypoint=online_calculator,
     request_type=online.OnlineDetails,

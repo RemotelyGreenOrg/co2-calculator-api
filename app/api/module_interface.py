@@ -9,9 +9,9 @@ RequestT = TypeVar("RequestT", bound=BaseModel)
 ResponseT = TypeVar("ResponseT", bound=BaseModel)
 
 
-class Module(Generic[RequestT, ResponseT]):
+class ModuleInterface(Generic[RequestT, ResponseT]):
     def __init__(
-        self: "Module",
+        self: "ModuleInterface",
         name: str,
         entrypoint: Callable[[RequestT], ResponseT],
         request_type: Type[RequestT],
@@ -25,32 +25,32 @@ class Module(Generic[RequestT, ResponseT]):
         self._response_type = response_type
 
     @property
-    def request_type(self: "Module") -> RequestT:
+    def request_type(self: "ModuleInterface") -> RequestT:
         return self._request_type
 
     @property
-    def response_type(self: "Module") -> ResponseT:
+    def response_type(self: "ModuleInterface") -> ResponseT:
         return self._response_type
 
     @property
-    def request_schema(self: "Module") -> dict[str, Any]:
+    def request_schema(self: "ModuleInterface") -> dict[str, Any]:
         return self.request_type.schema()
 
     @property
-    def response_schema(self: "Module") -> dict[str, Any]:
+    def response_schema(self: "ModuleInterface") -> dict[str, Any]:
         return self.response_type.schema()
 
     @property
-    def interface(self: "Module") -> tuple[dict[str, Any], dict[str, Any]]:
+    def interface(self: "ModuleInterface") -> tuple[dict[str, Any], dict[str, Any]]:
         return self.request_schema, self.response_schema
 
 
 class Modules:
-    def __init__(self: "Modules", modules: list[Module]) -> None:
+    def __init__(self: "Modules", modules: list[ModuleInterface]) -> None:
         self._modules = modules
 
     @property
-    def modules(self: "Modules") -> list[Module]:
+    def modules(self: "Modules") -> list[ModuleInterface]:
         return self._modules
 
     @property

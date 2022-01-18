@@ -3,7 +3,7 @@ from enum import Enum
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from app.api.module_interface import Module
+from app.api.module_interface import ModuleInterface
 
 router = APIRouter()
 
@@ -53,7 +53,7 @@ def entrypoint(request: TemplateModuleRequest) -> TemplateModuleResponse:
     return TemplateModuleResponse()
 
 
-module = Module(
+module = ModuleInterface(
     name="template_module",
     entrypoint=entrypoint,
     request_type=TemplateModuleRequest,

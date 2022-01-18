@@ -97,7 +97,7 @@ def validate_request_paths(cost_paths: list[CostPath]) -> list[CostPathValidated
     return cost_paths_validated
 
 
-@router.post("/cost_aggregator")
+@router.post("/cost-aggregator")
 async def cost_aggregator(request: CostAggregatorRequest) -> CostAggregatorResponse:
     cost_paths = validate_request_paths(request.cost_paths)
     cost_path_responses = []

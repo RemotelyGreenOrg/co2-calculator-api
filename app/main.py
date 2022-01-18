@@ -52,27 +52,32 @@ async def websocket_endpoint(websocket: WebSocket):
                 for connection in all_connections:
                     await connection.send_json(data)
             if "event_name" in data:
-                event_participants = 0
-                for connection in connections_by_event:
-                    if connection["event_name"] == data["event_name"]:
-                        event_participants = event_participants + 1
+                event_name = data["event_name"]
+                connections_by_event.append(
+                        {"event_name": data["event_name"], "data": data, "websocket": websocket})
 
-                if event_participants == 0:
-                    connections_by_event.append(
-                        {"event_name": data["event_name"], "websocket": websocket})
+                connections_for_this_event = [c for c in connections_by_event if c["event_name"] == event_name]
+                event_participants = len(connections_by_event)
+                participant_locations = [c["data"]["participant_location"] for c in connections_for_this_event if "participant_location" in c["data"]]
+
+                if event_participants == 1:
                     await websocket.send_json({
                         "event_name": data["event_name"],
                         "event_location": data["event_location"],
-                        "event_participants": event_participants
-                    })
-                elif event_participants >= 1:
-                    # TODO add event_location
-                    await websocket.send_json({
-                        "event_name": data["event_name"],
-                        "participant_location": data["participant_location"],
-                        "event_participants": event_participants,
+                        "event_participants": 0,
+                        "participant_locations": participant_locations,
                         "calculation": 42 * event_participants,
                     })
+                elif event_participants > 1:
+                    # TODO add event_location
+                    for c in connections_by_event:
+                        await c["websocket"].send_json({
+                            "event_name": data["event_name"],
+                            "participant_location": data["participant_location"],
+                            "participant_locations": participant_locations,
+                            "event_participants": event_participants,
+                            "calculation": 42 * event_participants,
+                        })
 
     except WebSocketDisconnect:
         all_connections.remove(websocket)

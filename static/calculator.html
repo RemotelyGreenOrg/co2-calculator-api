@@ -81,7 +81,11 @@
       <h1>Dashboard</h1>
       <dl>
         <dt>CO2 Emissions</dt>
-        <dd></dd>
+        <dd id="co2"></dd>
+        <dt>Number of participants</dt>
+        <dd id="n-participants"></dd>
+        <dt>Participant locations</dt>
+        <dd id="participant-locations"></dd>
       </dl>
     </section>
     <script>
@@ -131,7 +135,13 @@
         } else if (data.hasOwnProperty("calculation")) {
           sectionJoinEvent.style.display = "none";
 
-          sectionDashboard.querySelector("dd").innerHTML = data.calculation;
+          sectionDashboard.querySelector("#co2").innerHTML = data.calculation;
+          sectionDashboard.style.display = "block";
+
+          sectionDashboard.querySelector("#n-participants").innerHTML = data.event_participants;
+          sectionDashboard.style.display = "block";
+
+          sectionDashboard.querySelector("#participant-locations").innerHTML = data.participant_locations;
           sectionDashboard.style.display = "block";
         }
       }

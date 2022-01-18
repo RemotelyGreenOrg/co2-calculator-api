@@ -10,10 +10,15 @@ from app.api.module_interface import ModuleInterface
 class Modules:
     def __init__(self: "Modules", module_interfaces: list[ModuleInterface]) -> None:
         self._modules = module_interfaces
+        self._modules_by_name = {m.name: m for m in module_interfaces}
 
     @property
     def modules(self: "Modules") -> list[ModuleInterface]:
         return self._modules
+
+    @property
+    def modules_by_name(self: "Modules") -> dict[str, ModuleInterface]:
+        return self._modules_by_name
 
     @property
     def interfaces(self: "Modules") -> list[dict[str, Any]]:

@@ -110,14 +110,7 @@ async def cost_aggregator(request: CostAggregatorRequest) -> CostAggregatorRespo
         for cost_item in cost_path.cost_items:
             item, module = cost_item.item, cost_item.module
             response = await module.entrypoint(cost_item.request)
-
-            # TODO: handle CO2 ranges in a more generic way
-            if module.name == online_calculator.module.name:
-                emissions = response.total_emissions
-                total_carbon_kg += statistics.mean([emissions.low, emissions.high])
-            else:
-                total_carbon_kg += response.total_carbon_kg
-
+            total_carbon_kg += module.get_total_carbon_kg(response)
             cost_item_responses.append(CostItemResponse(cost_item=item))
 
         cost_path_responses.append(

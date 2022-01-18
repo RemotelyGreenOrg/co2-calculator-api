@@ -254,4 +254,5 @@ module = ModuleInterface(
     entrypoint=flight_calculator,
     request_model=FlightCalculatorRequest,
     response_model=FlightCalculatorResponse,
+    get_total_carbon_kg=lambda response: response.total_carbon_kg,
 )

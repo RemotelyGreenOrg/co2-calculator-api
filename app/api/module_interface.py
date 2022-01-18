@@ -17,6 +17,7 @@ class ModuleInterface(GenericModel, Generic[RequestT, ResponseT]):
     response_model: Type[ResponseT]
     method: str = "post"
     router_args: Optional[dict[str, Any]] = None
+    get_total_carbon_kg: Callable[[ResponseT], float]
 
     @property
     def request_schema(self: "ModuleInterface") -> dict[str, Any]:

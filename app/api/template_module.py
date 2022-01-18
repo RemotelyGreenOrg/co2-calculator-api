@@ -55,4 +55,5 @@ module = ModuleInterface(
     entrypoint=entrypoint,
     request_model=TemplateModuleRequest,
     response_model=TemplateModuleResponse,
+    get_total_carbon_kg=lambda: 0,
 )

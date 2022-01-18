@@ -1,3 +1,5 @@
+import statistics
+
 import vc_calculator.interface as online
 
 from app.api.module_interface import ModuleInterface
@@ -13,10 +15,16 @@ async def online_calculator(
     return results
 
 
+def get_total_carbon_kg(response: online.OnlineCalculatorResponse) -> float:
+    emissions = response.total_emissions
+    return statistics.mean([emissions.low, emissions.high])
+
+
 module = ModuleInterface(
     name="online_calculator",
     path="/online",
     entrypoint=online_calculator,
     request_model=online.OnlineDetails,
     response_model=online.OnlineCalculatorResponse,
+    get_total_carbon_kg=get_total_carbon_kg,
 )

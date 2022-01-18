@@ -1,9 +1,6 @@
-from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from app.api.module_interface import ModuleInterface
-
-router = APIRouter()
 
 
 class AnotherModuleRequest(BaseModel):
@@ -32,15 +29,14 @@ class AnotherModuleResponse(BaseModel):
         title = "Another Module Response"
 
 
-@router.post("/another-module", response_model=AnotherModuleResponse)
 async def entrypoint(request: AnotherModuleRequest) -> AnotherModuleResponse:
     return AnotherModuleResponse()
 
 
 module = ModuleInterface(
     name="another_module",
+    path="/another-module",
     entrypoint=entrypoint,
-    request_type=AnotherModuleRequest,
-    response_type=AnotherModuleResponse,
-    router=router,
+    request_model=AnotherModuleRequest,
+    response_model=AnotherModuleResponse,
 )

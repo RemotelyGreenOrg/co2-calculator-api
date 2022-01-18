@@ -1,11 +1,8 @@
 from enum import Enum
 
-from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from app.api.module_interface import ModuleInterface
-
-router = APIRouter()
 
 
 class FooBar(BaseModel):
@@ -48,15 +45,14 @@ class TemplateModuleResponse(BaseModel):
         title = "Template Module Response"
 
 
-@router.post("/template-module", response_model=TemplateModuleRequest)
 async def entrypoint(request: TemplateModuleRequest) -> TemplateModuleResponse:
     return TemplateModuleResponse()
 
 
 module = ModuleInterface(
     name="template_module",
+    path="/template-module",
     entrypoint=entrypoint,
-    request_type=TemplateModuleRequest,
-    response_type=TemplateModuleResponse,
-    router=router,
+    request_model=TemplateModuleRequest,
+    response_model=TemplateModuleResponse,
 )

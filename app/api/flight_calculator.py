@@ -2,12 +2,9 @@ import json
 
 import pyproj
 import reverse_geocoder
-from fastapi import APIRouter
 from pydantic import BaseModel, conlist, confloat
 
 from app.api.module_interface import ModuleInterface
-
-router = APIRouter()
 
 
 class GeoCoordinates(BaseModel):
@@ -242,7 +239,6 @@ def build_response(
     )
 
 
-@router.post("/flight", response_model=FlightCalculatorResponse)
 async def flight_calculator(
     request: FlightCalculatorRequest,
 ) -> FlightCalculatorResponse:
@@ -254,8 +250,8 @@ async def flight_calculator(
 
 module = ModuleInterface(
     name="flight_calculator",
+    path="/flight",
     entrypoint=flight_calculator,
-    request_type=FlightCalculatorRequest,
-    response_type=FlightCalculatorResponse,
-    router=router,
+    request_model=FlightCalculatorRequest,
+    response_model=FlightCalculatorResponse,
 )

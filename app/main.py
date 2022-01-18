@@ -66,8 +66,10 @@ async def websocket_endpoint(websocket: WebSocket):
                 ]
                 event_participants = len(connections_by_event)
                 participant_locations = [
-                    (c["data"]["latitude"], c["data"]["longitude"]
-                   ) for c in connections_for_this_event if "participant_location" in c["data"]]
+                    (c["data"]["latitude"], c["data"]["longitude"])
+                    for c in connections_for_this_event
+                    if "participant_location" in c["data"]
+                ]
 
                 if event_participants == 1:
                     await websocket.send_json(

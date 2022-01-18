@@ -81,15 +81,14 @@ async def websocket_endpoint(websocket: WebSocket):
                     # TODO add event_location
                     for c in connections_by_event:
                         await c["websocket"].send_json(
-
-                                {
-                            "event_name": data["event_name"],
-                            "participant_location": data["participant_location"],
+                            {
+                                "event_name": data["event_name"],
+                                "participant_location": data["participant_location"],
                                 "participant_locations": participant_locations,
-                            "event_participants": event_participants,
-                            "calculation": 42 * event_participants,
-                        }
-                    )
+                                "event_participants": event_participants,
+                                "calculation": 42 * event_participants,
+                            }
+                        )
 
     except WebSocketDisconnect:
         all_connections.remove(websocket)

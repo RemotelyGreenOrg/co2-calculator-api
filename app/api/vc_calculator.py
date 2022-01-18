@@ -6,7 +6,7 @@ from app.api.module_interface import ModuleInterface
 router = APIRouter()
 
 
-@router.post("/online")
+@router.post("/online", response_model=online.OnlineCalculatorResponse)
 def online_calculator(body: online.OnlineDetails) -> online.OnlineCalculatorResponse:
     """Calculate CO2 emissions for an online video call"""
     devices = body.device_list

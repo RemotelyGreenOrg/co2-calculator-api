@@ -52,7 +52,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 for connection in all_connections:
                     await connection.send_json(data)
             if "event_name" in data:
-                print(f"BEK {data = }")
+
                 event_name = data["event_name"]
                 connections_by_event.append(
                         {"event_name": data["event_name"], "data": data, "websocket": websocket})
@@ -60,6 +60,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 connections_for_this_event = [c for c in connections_by_event if c["event_name"] == event_name]
                 event_participants = len(connections_by_event)
                 participant_locations = [(c["data"]["latitude"], c["data"]["longitude"]) for c in connections_for_this_event if "participant_location" in c["data"]]
+
 
                 if event_participants == 1:
                     await websocket.send_json({

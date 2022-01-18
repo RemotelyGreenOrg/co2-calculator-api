@@ -1,4 +1,3 @@
-import statistics
 from typing import Any, Generic
 
 import pydantic
@@ -6,9 +5,8 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, conlist, confloat
 from pydantic.generics import GenericModel
 
-from app.api import online_calculator
-from app.api.module_interface import ModuleInterface, RequestT, ResponseT
-from app.api.modules import modules
+from app.module_interface import ModuleInterface, RequestT, ResponseT
+from app.modules import modules
 
 router = APIRouter()
 

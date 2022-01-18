@@ -2,7 +2,7 @@ import statistics
 
 import vc_calculator.interface as online
 
-from app.api.module_interface import ModuleInterface
+from app.module_interface import ModuleInterface
 
 
 async def online_calculator(

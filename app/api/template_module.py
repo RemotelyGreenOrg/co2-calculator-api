@@ -2,7 +2,7 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
-from app.api.module_interface import ModuleInterface
+from app.module_interface import ModuleInterface
 
 
 class FooBar(BaseModel):

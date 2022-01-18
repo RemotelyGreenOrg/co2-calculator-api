@@ -4,8 +4,8 @@ from pydantic import BaseSettings
 from starlette.websockets import WebSocket
 from starlette.websockets import WebSocketDisconnect
 
-from app.api import cost_aggregator
-from app.api.modules import modules
+from app import cost_aggregator
+from app.modules import modules
 
 
 class Settings(BaseSettings):

@@ -4,7 +4,7 @@ from app.api import (
     online_calculator,
     template_module,
 )
-from app.api.module_interface import ModuleInterfaces
+from app.module_interface import ModuleInterfaces
 
 
 modules = ModuleInterfaces(

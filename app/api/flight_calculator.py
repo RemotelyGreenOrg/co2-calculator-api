@@ -1,35 +1,69 @@
+import json
+
+from typing import Any
+
 import pyproj
+import reverse_geocoder
 from fastapi import APIRouter
-from pydantic import BaseModel, conlist
+from pydantic import BaseModel, conlist, confloat
 
 
 router = APIRouter()
 
 
-class Location(BaseModel):
-    lon: float
-    lat: float
+class GeoCoordinates(BaseModel):
+    lon: confloat(ge=-180.0, lt=180.0)
+    lat: confloat(ge=-90.0, lt=90.0)
+
+
+class Country(BaseModel):
+    iso_code: str
+    name: str
+    coordinates: GeoCoordinates
 
 
 class FlightStage(BaseModel):
-    one_way: bool
-    start: Location
-    end: Location
+    start: GeoCoordinates
+    end: GeoCoordinates
+    one_way: bool = True
+
+
+class FlightStageCarbonSummary(BaseModel):
+    stage: FlightStage
+    start_country: Country
+    end_country: Country
+    distance: confloat(ge=0.0)
+    carbon_kg: confloat(ge=0.0)
 
 
 class FlightCalculatorRequest(BaseModel):
     stages: conlist(FlightStage, min_items=1)
 
 
-class FlightStageCarbonSummary(BaseModel):
-    stage: FlightStage
-    distance: float
-    carbon_kg: float
-
-
 class FlightCalculatorResponse(BaseModel):
     stages: list[FlightStageCarbonSummary]
-    total_carbon_kg: float
+    total_carbon_kg: confloat(ge=0.0)
+
+
+def extend_flight_distance(distance: float) -> float:
+    """Add factor to shortest flight distance to account for indirect flight paths
+
+    Following https://www.icao.int/environmental-protection/CarbonOffset/Documents/Methodology%20ICAO%20Carbon%20Calculator_v11-2018.pdf
+    section 4.2 we add a correction factor to represent deviations from the shortest
+    path flown between points due to stacking, traffic and weather-driven corrections.
+
+    Args:
+        distance: Shortest distance - geodesic or Great Circle - between points in km
+
+    Returns: Distance with additional correction factor
+    """
+
+    if distance < 550:
+        return distance + 50
+    elif distance < 5500:
+        return distance + 100
+
+    return distance + 125
 
 
 def get_stage_distance(
@@ -47,6 +81,7 @@ def get_stage_distance(
     """
     start, end = stage.start, stage.end
     distance = geod.inv(start.lon, start.lat, end.lon, end.lat)[2] / 1000
+    distance = extend_flight_distance(distance)
 
     if stage.one_way:
         return distance
@@ -54,18 +89,97 @@ def get_stage_distance(
     return distance * 2
 
 
+def geocoder_result_to_country(result: dict, countries: dict[str, str]) -> Country:
+    """Convert reverse_geocoder search result to a Country"""
+    code = result["cc"]
+    coordinates = GeoCoordinates(lon=result["lon"], lat=result["lat"])
+    return Country(iso_code=code, name=countries[code], coordinates=coordinates)
+
+
+def lookup_stage_countries(
+    stage: FlightStage, countries: dict[str, str]
+) -> tuple[Country, Country]:
+    """Use reverse_geocoder to find a flight stage's start and end countries"""
+    start, end = stage.start, stage.end
+    coordinates = [(start.lat, start.lon), (end.lat, end.lon)]
+    results = reverse_geocoder.search(coordinates)[:2]
+    country_results = [geocoder_result_to_country(r, countries) for r in results]
+    start_result, end_result = country_results[:2]
+    return start_result, end_result
+
+
+def lookup_carbon_intensity_kg(
+    departure_country: Country,
+    default_intensity_grams: float = 89.0,
+) -> float:
+    """Find the carbon intensity in kg/km of a flight given the departure country
+
+    Data sourced from Graver et al. ICCT Report: CO2 Emissions From Commercial
+    Aviation: 2013, 2018, and 2019. (Table 4)
+
+    See: https://theicct.org/publication/co2-emissions-from-commercial-aviation-2013-2018-and-2019
+
+    Args:
+        departure_country: Flight departure country
+        default_intensity_grams: Default value departure countries not explicitly
+            enumerated in paper
+
+    Returns: CO2 intensity in kg/km flown of a flight originating from departure country
+    """
+    intensities = {
+        "AE": 89,
+        "AI": 87,
+        "AS": 95,
+        "AU": 90,
+        "BM": 87,
+        "CC": 90,
+        "CN": 88,
+        "CX": 90,
+        "DE": 91,
+        "ES": 79,
+        "FK": 87,
+        "FR": 87,
+        "GB": 87,
+        "GF": 87,
+        "GG": 87,
+        "GI": 87,
+        "GP": 87,
+        "GU": 95,
+        "HK": 88,
+        "IM": 87,
+        "IN": 85,
+        "JP": 95,
+        "KY": 87,
+        "MP": 95,
+        "MQ": 87,
+        "MS": 87,
+        "NC": 87,
+        "NF": 90,
+        "PF": 87,
+        "PM": 87,
+        "PR": 95,
+        "RE": 87,
+        "SH": 87,
+        "TC": 87,
+        "UM": 95,
+        "US": 95,
+        "VG": 87,
+        "VI": 95,
+        "WF": 87,
+        "YT": 87,
+    }
+    code = departure_country.iso_code
+    intensity_grams = intensities.get(code, default_intensity_grams)
+    return intensity_grams / 1000
+
+
 def calculate_carbon_stage(
     stage: FlightStage,
     geod: pyproj.Geod,
-    carbon_intensity: float = 0.088,
+    countries: dict[str, str],
     non_co2_effects_scaling: float = 1.9,
-    flight_distance_scaling: float = 1.08,
 ) -> FlightStageCarbonSummary:
     """Calculate flight emissions for an array of distances in km
-
-    The average carbon intensity from passenger aviation in 2018 was
-    88g CO2/revenue-passenger-kilometer:
-    https://theicct.org/sites/default/files/publications/ICCT_CO2-commercl-aviation-2018_20190918.pdf
 
     To account for the non-CO2 climate effects of aviation, the UK Government (in 2018)
     recommends applying a multiplier of 1.9:
@@ -76,24 +190,26 @@ def calculate_carbon_stage(
     formation, which is still not well understood:
     https://www.sciencedirect.com/science/article/pii/S1352231009004956
 
-    The UK government (in 2018) recommends adding 8% to the great-circle distance to
-    account for indirect flight paths and delays:
-    https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/726911/2018_methodology_paper_FINAL_v01-00.pdf
-
     Args:
         stage: Flight stage to calculate carbon intensity for
         geod: proj geodesic distance calculator
-        carbon_intensity: CO2 g/km flown
+        countries: Mapping from ISO 3166-1 alpha-2 country codes to country names
         non_co2_effects_scaling: Additional scaling for the non-CO2 climate effects of aviation
-        flight_distance_scaling: Scale factor to account for indirect flight paths
 
     Returns:
         Emitted CO2 in kg of each flight stage
     """
     distance = get_stage_distance(stage, geod)
-    kg_co2_per_km = carbon_intensity * non_co2_effects_scaling * flight_distance_scaling
-    carbon_kg = distance * kg_co2_per_km
-    return FlightStageCarbonSummary(stage=stage, distance=distance, carbon_kg=carbon_kg)
+    start_country, end_country = lookup_stage_countries(stage, countries)
+    kg_co2_per_km = lookup_carbon_intensity_kg(start_country)
+    carbon_kg = distance * kg_co2_per_km * non_co2_effects_scaling
+    return FlightStageCarbonSummary(
+        stage=stage,
+        start_country=start_country,
+        end_country=end_country,
+        distance=distance,
+        carbon_kg=carbon_kg,
+    )
 
 
 def calculate_carbon_stages(
@@ -110,7 +226,11 @@ def calculate_carbon_stages(
         List of summaries for CO2 emissions from each flight stage
     """
     geod = pyproj.Geod(ellps=ellipse)
-    return [calculate_carbon_stage(stage, geod) for stage in request.stages]
+
+    with open("data/iso_3166_countries.json") as f:
+        countries = json.load(f)
+
+    return [calculate_carbon_stage(stage, geod, countries) for stage in request.stages]
 
 
 def build_response(
@@ -129,3 +249,15 @@ def flight_calculator(request: FlightCalculatorRequest) -> FlightCalculatorRespo
     stage_summaries = calculate_carbon_stages(request)
     response = build_response(stage_summaries)
     return response
+
+
+def interface() -> list[dict[str, Any]]:
+    return [request(), response()]
+
+
+def request() -> dict[str, Any]:
+    return FlightCalculatorRequest.schema()
+
+
+def response() -> dict[str, Any]:
+    return FlightCalculatorResponse.schema()

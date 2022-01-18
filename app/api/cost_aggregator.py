@@ -54,7 +54,7 @@ async def cost_aggregator(request: CostAggregatorRequest) -> CostAggregatorRespo
             if cost_item.module in modules_by_name:
                 module = modules_by_name[cost_item.module]
                 request = module.request_type(**cost_item.properties)
-                response = module.entrypoint(request)
+                response = await module.entrypoint(request)
 
                 if cost_item.module == vc_calculator.module.name:
                     emissions = response.total_emissions

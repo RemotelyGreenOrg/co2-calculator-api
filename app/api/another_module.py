@@ -33,7 +33,7 @@ class AnotherModuleResponse(BaseModel):
 
 
 @router.post("/another-module", response_model=AnotherModuleResponse)
-def entrypoint(request: AnotherModuleRequest) -> AnotherModuleResponse:
+async def entrypoint(request: AnotherModuleRequest) -> AnotherModuleResponse:
     return AnotherModuleResponse()
 
 

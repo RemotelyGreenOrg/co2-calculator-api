@@ -49,7 +49,7 @@ class TemplateModuleResponse(BaseModel):
 
 
 @router.post("/template-module", response_model=TemplateModuleRequest)
-def entrypoint(request: TemplateModuleRequest) -> TemplateModuleResponse:
+async def entrypoint(request: TemplateModuleRequest) -> TemplateModuleResponse:
     return TemplateModuleResponse()
 
 

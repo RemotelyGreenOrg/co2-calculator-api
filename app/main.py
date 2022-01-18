@@ -13,6 +13,7 @@ module_import_list = [
     "app.api.flight_calculator",
     "app.api.vc_calculator",
     "app.api.car_calculator",
+    "app.api.train_calculator",
 ]
 module_list = []
 for module in module_import_list:

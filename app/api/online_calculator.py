@@ -1,14 +1,11 @@
 import vc_calculator.interface as online
-from vc_calculator.interface import OnlineDetails, OnlineCalculatorResponse
-from fastapi import APIRouter
 
 from app.api.module_interface import ModuleInterface
 
-router = APIRouter()
 
-
-@router.post("/online", response_model=OnlineCalculatorResponse)
-async def online_calculator(body: OnlineDetails) -> OnlineCalculatorResponse:
+async def online_calculator(
+    body: online.OnlineDetails,
+) -> online.OnlineCalculatorResponse:
     """Calculate CO2 emissions for an online video call"""
     devices = body.device_list
     devices = [online.make_device(d) for d in devices]
@@ -18,8 +15,8 @@ async def online_calculator(body: OnlineDetails) -> OnlineCalculatorResponse:
 
 module = ModuleInterface(
     name="online_calculator",
+    path="/online",
     entrypoint=online_calculator,
-    request_type=OnlineDetails,
-    response_type=OnlineCalculatorResponse,
-    router=router,
+    request_model=online.OnlineDetails,
+    response_model=online.OnlineCalculatorResponse,
 )

@@ -9,7 +9,6 @@ from starlette.websockets import WebSocketDisconnect
 
 module_import_list = [
     "app.api.template_module",
-    "app.api.another_module",
     "app.api.flight_calculator",
     "app.api.vc_calculator",
 ]

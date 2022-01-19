@@ -1,9 +1,8 @@
-from email.policy import default
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field, confloat
 from fastapi import APIRouter
+from pydantic import BaseModel, Field, confloat
 
 router = APIRouter()
 

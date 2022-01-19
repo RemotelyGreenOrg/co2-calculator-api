@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="shortcut icon" type="image/x-icon" href="data:image/x-icon;," />
     <link rel="stylesheet" href="/static/basic.css" />
+    <link rel="stylesheet" href="/static/location.css" />
+    <script src="/static/geoapify.js"></script>
     <style>
       /*
       ----------------------------------------------------------
@@ -35,6 +37,62 @@
         margin-bottom: 1rem;
       }
     </style>
+    <script>
+    function geoFindMe() {
+
+      function success(position) {
+        const latitude  = position.coords.latitude;
+        const longitude = position.coords.longitude;
+
+        const latField = document.querySelector('#latitude');
+        const lonField = document.querySelector('#longitude');
+        const srcField = document.querySelector('#lat-lon-source');
+        latField.value = latitude;
+        lonField.value = longitude;
+        srcField.value = "browser";
+
+      }
+      function error() {
+        status.textContent = 'Unable to retrieve your location';
+      }
+      if(!navigator.geolocation) {
+        status.textContent = 'Geolocation is not supported by your browser';
+      } else {
+        status.textContent = 'Locating…';
+        navigator.geolocation.getCurrentPosition(success, error);
+      }
+    }
+
+	function resolveLatLon(onResolve){
+		const latField = document.querySelector('#latitude');
+		const lonField = document.querySelector('#longitude');
+
+		function logValues(){
+			var values = new Object();
+			values.latitude = latField.value;
+			values.longitude = lonField.value;
+			values.username = document.querySelector('#username')?.value;
+			values.method = document.querySelector('#participation-method')?.value;
+			values.address = document.querySelector('#address')?.value;
+			values.location_source = document.querySelector('#lat-long-source')?.value;
+            onResolve(values);
+			console.log(JSON.stringify(values));
+		}
+
+		if (document.querySelector('#lat-lon-source').value === "address"){
+			const addressField = document.querySelector('#participant_location');
+			get_lat_lon_from_address(addressField.value)
+				.then(lat_lon => {
+					latField.value = lat_lon.lat;
+					lonField.value = lat_lon.lon;
+					logValues();
+				});
+		} else{
+			logValues();
+		}
+	}
+
+    </script>
   </head>
   <body>
     <section id="create-event" style="display: none">
@@ -59,21 +117,24 @@
       <h1>Event created</h1>
       <input id="url" type="text" readonly />
       <p>Copy this URL to share with others.</p>
-      <button>Join event</button>
+      <button>Go to event</button>
     </section>
 
     <section id="join-event" style="display: none">
       <h1>Join event</h1>
+        <button id="find-me">Find my location</button><br/>
       <form>
         <div>
           <label for="event_name">Your event's name:</label>
           <input type="text" id="event_name" name="event_name" autocomplete="off" required />
         </div>
-        <div>
+        <div id="autocomplete-container">
           <label for="participant_location">Your location:</label>
-          <input type="text" id="participant_location" name="participant_location" autocomplete="off" required />
         </div>
-        <button>Join event</button>
+         <input type="hidden" autocomplete="off" id="latitude" name="latitude" value="NaN" />
+         <input type="hidden" autocomplete="off" id="longitude" name="longitude" value="NaN" />
+         <input type="hidden" autocomplete="off" id="lat-lon-source" name="lat-lon-source" value="address" /> 
+        <button id="submit-join">Join event</button>
       </form>
     </section>
 
@@ -81,20 +142,46 @@
       <h1>Dashboard</h1>
       <dl>
         <dt>CO2 Emissions</dt>
-        <dd></dd>
+        <dd id="co2"></dd>
+        <dt>Number of participants</dt>
+        <dd id="n-participants"></dd>
+        <dt>Participant locations</dt>
+        <dd id="participant-locations"></dd>
       </dl>
     </section>
+    <script>
+        // Sets up the autocompletion for addresses
+        const addressInput = addressAutocomplete(document.getElementById("autocomplete-container"), (data) => {
+          console.log("Selected option: ");
+          console.log(data);
+        }, {
+          placeholder: "Enter an address here",
+          name: "participant_location",
+        });
+        addressInput.addEventListener("input", function(e) {
+            document.querySelector('#lat-lon-source').value = "address";
+        });
+    </script>
     <script>
       function onEventCreateFormSubmit(event) {
         event.preventDefault();
         const event_name = event.target.querySelector("#event_name").value;
         const event_location = event.target.querySelector("#event_location").value;
-        websocket.send(JSON.stringify({ event_name, event_location }));
+        const data = { event_name, event_location };
+        console.log("websocket.send", data);
+        websocket.send(JSON.stringify(data));
       }
 
       function onEventJoinFormSubmit(event) {
         event.preventDefault();
-        console.log("onEventJoinFormSubmit");
+        const event_name = event.target.querySelector("#event_name").value;
+        const participant_location = event.target.querySelector("#participant_location").value;
+        resolveLatLon(data => {
+            data.event_name = event_name;
+            data.participant_location = participant_location;
+            console.log("websocket.send", data);
+            websocket.send(JSON.stringify(data));
+        });
       }
 
       function onMessage(event) {
@@ -122,6 +209,17 @@
             viewEventButton.addEventListener("click", onViewEventClick);
             sectionCreateEventConfirmation.style.display = "block";
           }
+        } else if (data.hasOwnProperty("calculation")) {
+          sectionJoinEvent.style.display = "none";
+
+          sectionDashboard.querySelector("#co2").innerHTML = data.calculation;
+          sectionDashboard.style.display = "block";
+
+          sectionDashboard.querySelector("#n-participants").innerHTML = data.event_participants;
+          sectionDashboard.style.display = "block";
+
+          sectionDashboard.querySelector("#participant-locations").innerHTML = data.participant_locations;
+          sectionDashboard.style.display = "block";
         }
       }
 
@@ -149,13 +247,15 @@
       const sectionJoinEvent = document.querySelector("#join-event");
       const joinEventForm = sectionJoinEvent.querySelector("form");
       joinEventForm.addEventListener("submit", onEventJoinFormSubmit);
+      const findLocationButton = sectionJoinEvent.querySelector("#find-me");
+      findLocationButton.addEventListener("click", geoFindMe);
 
       const sectionDashboard = document.querySelector("#dashboard");
 
       // Fill in the form with the URL parameter
       const params = new URLSearchParams(window.location.search);
       if (params.has("event_name")) {
-        // show join
+        // show data
         sectionJoinEvent.querySelector("#event_name").value = params.get("event_name");
         sectionJoinEvent.style.display = "block";
       } else {

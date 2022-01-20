@@ -4,6 +4,8 @@ from typing import Any
 from pydantic import BaseModel, Field, confloat
 from fastapi import APIRouter
 
+from app.module_interface import ModuleInterface
+
 router = APIRouter()
 
 
@@ -80,20 +82,17 @@ def build_response(
     # emissions factors: 3.07 kg of CO2/L for diesel and 2.71 kg of CO2/L for petrol
 
 
-@router.post("/car", response_model=CarCalculatorResponse)
-def car_calculator(request: CarCalculatorRequest) -> CarCalculatorResponse:
+async def car_calculator(request: CarCalculatorRequest) -> CarCalculatorResponse:
     """Calculate CO2 emissions for a car trips"""
     response = build_response(request)
     return response
 
 
-def interface() -> list[dict[str, Any]]:
-    return [request(), response()]
-
-
-def request() -> dict[str, Any]:
-    return CarCalculatorRequest.schema()
-
-
-def response() -> dict[str, Any]:
-    return CarCalculatorResponse.schema()
+module = ModuleInterface(
+    name="car_calculator",
+    path="/car",
+    entrypoint=car_calculator,
+    request_model=CarCalculatorRequest,
+    response_model=CarCalculatorResponse,
+    get_total_carbon_kg=lambda response: response.total_carbon_kg,
+)

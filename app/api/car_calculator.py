@@ -1,11 +1,8 @@
 from enum import Enum
 
-from fastapi import APIRouter
 from pydantic import BaseModel, Field, confloat
 
 from app.module_interface import ModuleInterface
-
-router = APIRouter()
 
 
 class FuelType(str, Enum):

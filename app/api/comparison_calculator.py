@@ -1,9 +1,6 @@
-from typing import Any
-
-from fastapi import APIRouter
 from pydantic import BaseModel, confloat
 
-router = APIRouter()
+from app.module_interface import ModuleInterface
 
 
 class ComparisonItem(BaseModel):
@@ -81,8 +78,7 @@ def build_response(
     return ComparisonCalculatorResponse(comparisons=results)
 
 
-@router.post("/comparison", response_model=ComparisonCalculatorResponse)
-def comparison_calculator(
+async def comparison_calculator(
     request: ComparisonCalculatorRequest,
 ) -> ComparisonCalculatorResponse:
     """Compare CO2 emissions to imaginable Comparisons"""
@@ -90,13 +86,11 @@ def comparison_calculator(
     return response
 
 
-def interface() -> list[dict[str, Any]]:
-    return [request(), response()]
-
-
-def request() -> dict[str, Any]:
-    return ComparisonCalculatorRequest.schema()
-
-
-def response() -> dict[str, Any]:
-    return ComparisonCalculatorResponse.schema()
+module = ModuleInterface(
+    name="comparison_calculator",
+    path="/comparison",
+    entrypoint=comparison_calculator,
+    request_model=ComparisonCalculatorRequest,
+    response_model=ComparisonCalculatorResponse,
+    get_total_carbon_kg=lambda _: 0,
+)

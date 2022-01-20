@@ -1,10 +1,8 @@
 from enum import Enum
-from typing import Any
 
 from pydantic import BaseModel, Field
-from fastapi import APIRouter
 
-router = APIRouter()
+from app.module_interface import ModuleInterface
 
 
 class FooBar(BaseModel):
@@ -47,13 +45,15 @@ class TemplateModuleResponse(BaseModel):
         title = "Template Module Response"
 
 
-def interface() -> list[dict[str, Any]]:
-    return [request(), response()]
+async def entrypoint(request: TemplateModuleRequest) -> TemplateModuleResponse:
+    return TemplateModuleResponse()
 
 
-def request() -> dict[str, Any]:
-    return TemplateModuleRequest.schema()
-
-
-def response() -> dict[str, Any]:
-    return TemplateModuleResponse.schema()
+module = ModuleInterface(
+    name="template_module",
+    path="/template-module",
+    entrypoint=entrypoint,
+    request_model=TemplateModuleRequest,
+    response_model=TemplateModuleResponse,
+    get_total_carbon_kg=lambda: 0,
+)

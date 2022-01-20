@@ -1,8 +1,7 @@
 from enum import Enum
-from typing import Any
 
-from pydantic import BaseModel, Field, confloat
 from fastapi import APIRouter
+from pydantic import BaseModel, Field, confloat
 
 from app.module_interface import ModuleInterface
 
@@ -69,17 +68,25 @@ class CarCalculatorResponse(BaseModel):
 def build_response(
     request: CarCalculatorRequest,
 ) -> CarCalculatorResponse:
-    """Build API response"""
-    total_carbon = 0.205 * request.distance  # Private cars in France: 205 g of CO2/km
+    """Build API response
+
+    Sources:
+        https://ch.oui.sncf/en/help-ch/calculation-co2-emissions-your-train-journey
+
+        Average use of private vehicles in France: Sustainable Development and Energy
+        Ministry - Observation and Statistics Department (SOeS)
+
+        Average consumption of passenger vehicles in France and fuel emissions factors:
+        ADEME – Carbon Base
+
+    Private cars in France: 205 g of CO2/km
+    Use of cars in km: 68% diesel and 32% petrol;
+    Consumption: 6.6L/100 km for diesel and 7.8L/100 km for petrol;
+    Emissions factors: 3.07 kg of CO2/L for diesel and 2.71 kg of CO2/L for petrol
+    """
+    car_co2_kg_per_km = 0.205
+    total_carbon = car_co2_kg_per_km * request.distance
     return CarCalculatorResponse(total_carbon_kg=total_carbon)
-    # https://ch.oui.sncf/en/help-ch/calculation-co2-emissions-your-train-journey
-    # source: Average use of private vehicles in France:
-    # Sustainable Development and Energy Ministry - Observation and Statistics Department (SOeS)
-    # Average consumption of passenger vehicles in France and fuel emissions factors:
-    # ADEME – Carbon Base
-    # Use of cars in km: 68% diesel and 32% petrol;
-    # consumption: 6.6L/100 km for diesel and 7.8L/100 km for petrol;
-    # emissions factors: 3.07 kg of CO2/L for diesel and 2.71 kg of CO2/L for petrol
 
 
 async def car_calculator(request: CarCalculatorRequest) -> CarCalculatorResponse:

@@ -1,10 +1,8 @@
 from enum import Enum
-from typing import Any
 
-from fastapi import APIRouter
 from pydantic import BaseModel, Field, confloat
 
-router = APIRouter()
+from app.module_interface import ModuleInterface
 
 
 class TrainType(str, Enum):
@@ -106,8 +104,8 @@ def lookup_carbon_intensity_grams(
             },
         },
     }
-    train_details = (
-        carbon_intensities.get(request.railway_company, {}).get(request.train_type, {})
+    train_details = carbon_intensities.get(request.railway_company, {}).get(
+        request.train_type, {}
     )
     return train_details.get("CO2 [g/km]", default_co2_g_per_km)
 
@@ -119,20 +117,17 @@ def build_response(request: TrainCalculatorRequest) -> TrainCalculatorResponse:
     return TrainCalculatorResponse(total_carbon_kg=total_carbon_kg)
 
 
-@router.post("/train", response_model=TrainCalculatorResponse)
 def train_calculator(request: TrainCalculatorRequest) -> TrainCalculatorResponse:
     """Calculate CO2 emissions for a train trip"""
     response = build_response(request)
     return response
 
 
-def interface() -> list[dict[str, Any]]:
-    return [request(), response()]
-
-
-def request() -> dict[str, Any]:
-    return TrainCalculatorRequest.schema()
-
-
-def response() -> dict[str, Any]:
-    return TrainCalculatorResponse.schema()
+module = ModuleInterface(
+    name="train_calculator",
+    path="/train",
+    entrypoint=train_calculator,
+    request_model=TrainCalculatorRequest,
+    response_model=TrainCalculatorResponse,
+    get_total_carbon_kg=lambda response: response.total_carbon_kg,
+)

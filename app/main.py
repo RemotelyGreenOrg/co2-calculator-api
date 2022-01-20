@@ -1,27 +1,20 @@
-# MODULES:
-from importlib import import_module
-
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseSettings
 from starlette.websockets import WebSocket
 from starlette.websockets import WebSocketDisconnect
 
-module_import_list = [
-    "app.api.template_module",
-    "app.api.flight_calculator",
-    "app.api.vc_calculator",
-    "app.api.car_calculator",
-    "app.api.train_calculator",
-]
-module_list = []
-for module in module_import_list:
-    module_list.append(import_module(module, __name__))
+from app import cost_aggregator
+from app.modules import modules
 
 
-# These default settings get overridden by environment variables.
-# @see https://fastapi.tiangolo.com/advanced/settings/
 class Settings(BaseSettings):
+    """Default settings for app
+
+    These default settings get overridden by environment variables.
+    @see https://fastapi.tiangolo.com/advanced/settings/
+    """
+
     host: str = "localhost:8000"
 
 
@@ -41,8 +34,10 @@ connections_by_event = []
 
 @app.websocket("/")
 async def websocket_endpoint(websocket: WebSocket):
-    # The websocket endpoint is listening at the root URL and is accessed via the
-    # Websocket protocol (ws or wss).
+    """
+    The websocket endpoint is listening at the root URL and is accessed via the
+    Websocket protocol (ws or wss).
+    """
     await websocket.accept()
     all_connections.append(websocket)
     try:
@@ -102,34 +97,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 connections_by_event.remove(connection)
 
 
-@app.get("/modules")
-async def get():
-    interfaces = []
-    for module in module_list:
-        for req_res in module.interface():  # interface has request and response
-            interfaces.append(req_res)
-    module_json = {"modules": interfaces}
-    return module_json
-
-
-@app.get("/requests")
-async def get():
-    requests = []
-    for module in module_list:
-        requests.append(module.request())
-    module_json = {"requests": requests}
-    return module_json
-
-
-@app.get("/responses")
-async def get():
-    responses = []
-    for module in module_list:
-        responses.append(module.response())
-    module_json = {"responses": responses}
-    return module_json
-
-
-# Include the module routers
-for module in module_list:
-    app.include_router(module.router)
+# ==================================================================
+# Register modules and routers
+modules.register(app)
+app.include_router(cost_aggregator.router)
+# ==================================================================

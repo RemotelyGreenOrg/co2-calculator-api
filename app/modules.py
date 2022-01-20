@@ -1,7 +1,8 @@
 from app.api import (
     flight_calculator,
     online_calculator,
-    template_module, car_calculator,
+    template_module,
+    car_calculator,
 )
 from app.module_interface import ModuleInterfaces
 

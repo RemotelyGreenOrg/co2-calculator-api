@@ -1,10 +1,8 @@
 from enum import Enum
-from typing import Any
 
-from pydantic import BaseModel, Field, confloat
-from fastapi import APIRouter
+from pydantic import BaseModel, Field
 
-router = APIRouter()
+from app.module_interface import ModuleInterface
 
 
 class FooBar(BaseModel):
@@ -43,34 +41,19 @@ class TemplateModuleResponse(BaseModel):
     This is the description of the template module Response
     """
 
-    total_carbon_kg: confloat(ge=0.0)
-
     class Config:
         title = "Template Module Response"
 
 
-def build_response(
-    request: TemplateModuleRequest,
-) -> TemplateModuleResponse:
-    """Build API response"""
-    total_carbon = 0.5 * request.snap
-    return TemplateModuleResponse(total_carbon_kg=total_carbon)
+async def entrypoint(request: TemplateModuleRequest) -> TemplateModuleResponse:
+    return TemplateModuleResponse()
 
 
-@router.post("/template", response_model=TemplateModuleResponse)
-def template_module(request: TemplateModuleRequest) -> TemplateModuleResponse:
-    """Calculate CO2 emissions for a template module"""
-    response = build_response(request)
-    return response
-
-
-def interface() -> list[dict[str, Any]]:
-    return [request(), response()]
-
-
-def request() -> dict[str, Any]:
-    return TemplateModuleRequest.schema()
-
-
-def response() -> dict[str, Any]:
-    return TemplateModuleResponse.schema()
+module = ModuleInterface(
+    name="template_module",
+    path="/template-module",
+    entrypoint=entrypoint,
+    request_model=TemplateModuleRequest,
+    response_model=TemplateModuleResponse,
+    get_total_carbon_kg=lambda: 0,
+)

@@ -1,29 +1,27 @@
-from email.policy import default
 from enum import Enum
-from typing import Any
 
 from pydantic import BaseModel, Field, confloat
-from fastapi import APIRouter
 
-router = APIRouter()
+from app.module_interface import ModuleInterface
 
 
 class TrainType(str, Enum):
-    TGV = "TGV"
+    Alleo = "Alleo"
+    Elipsos = "Elipsos"
+    Eurostar = "Eurostar"
+    Gala = "Gala"
     Intercity = "Intercity"
     TER = "TER"
-    Transilien = "Transilien"
+    TGV = "TGV"
     Thalys = "Thalys"
-    Eurostar = "Eurostar"
-    Elipsos = "Elipsos"
-    Gala = "Gala"
-    Alleo = "Alleo"
+    Transilien = "Transilien"
+    Unknown = "Unknown"
 
 
 class RailwayCompany(str, Enum):
-    SNCF = "SNCF"
-    SBB = "SBB/CFF/FFS"
     DB = "DB"
+    SBB = "SBB/CFF/FFS"
+    SNCF = "SNCF"
 
 
 class TrainCalculatorRequest(BaseModel):
@@ -56,96 +54,80 @@ class TrainCalculatorResponse(BaseModel):
         title = "Train Calculator Response"
 
 
-train_co2_list = [
-    {
-        "company": RailwayCompany.SNCF,
-        "train type": TrainType.TGV,
-        "CO2 [g/km]": 3.2,
-        "source": "https://ch.oui.sncf/en/help-ch/calculation-co2-emissions-your-train-journey",
-    },
-    {
-        "company": RailwayCompany.SNCF,
-        "train type": TrainType.Intercity,
-        "CO2 [g/km]": 11.8,
-        "source": "https://ch.oui.sncf/en/help-ch/calculation-co2-emissions-your-train-journey",
-    },
-    {
-        "company": RailwayCompany.SNCF,
-        "train type": TrainType.TER,
-        "CO2 [g/km]": 29.2,
-        "source": "https://ch.oui.sncf/en/help-ch/calculation-co2-emissions-your-train-journey",
-    },
-    {
-        "company": RailwayCompany.SNCF,
-        "train type": TrainType.Transilien,
-        "CO2 [g/km]": 6.4,
-        "source": "https://ch.oui.sncf/en/help-ch/calculation-co2-emissions-your-train-journey",
-    },
-    {
-        "company": RailwayCompany.SNCF,
-        "train type": TrainType.Thalys,
-        "CO2 [g/km]": 11.6,
-        "source": "https://ch.oui.sncf/en/help-ch/calculation-co2-emissions-your-train-journey",
-    },
-    {
-        "company": RailwayCompany.SNCF,
-        "train type": TrainType.Eurostar,
-        "CO2 [g/km]": 11.2,
-        "source": "https://ch.oui.sncf/en/help-ch/calculation-co2-emissions-your-train-journey",
-    },
-    {
-        "company": RailwayCompany.SNCF,
-        "train type": TrainType.Elipsos,
-        "CO2 [g/km]": 27,
-        "source": "https://ch.oui.sncf/en/help-ch/calculation-co2-emissions-your-train-journey",
-    },
-    {
-        "company": RailwayCompany.SNCF,
-        "train type": TrainType.Gala,
-        "CO2 [g/km]": 12,
-        "source": "https://ch.oui.sncf/en/help-ch/calculation-co2-emissions-your-train-journey",
-    },
-    {
-        "company": RailwayCompany.SNCF,
-        "train type": TrainType.Alleo,
-        "CO2 [g/km]": 11.3,
-        "source": "https://ch.oui.sncf/en/help-ch/calculation-co2-emissions-your-train-journey",
-    },
-    {
-        "company": RailwayCompany.SBB,
-        "CO2 [g/km]": 7,
-        "source": "https://news.sbb.ch/artikel/89400/bye-bye-co2",
-    },
-]
-
-
-def build_response(
+def lookup_carbon_intensity_grams(
     request: TrainCalculatorRequest,
-) -> TrainCalculatorResponse:
+    default_co2_g_per_km: float = 10.0,
+) -> float:
+    carbon_intensities = {
+        RailwayCompany.SBB: {
+            TrainType.Unknown: {
+                "CO2 [g/km]": 7.0,
+                "source": "https://news.sbb.ch/artikel/89400/bye-bye-co2",
+            }
+        },
+        RailwayCompany.SNCF: {
+            TrainType.Alleo: {
+                "CO2 [g/km]": 11.3,
+                "source": "https://ch.oui.sncf/en/help-ch/calculation-co2-emissions-your-train-journey",
+            },
+            TrainType.Elipsos: {
+                "CO2 [g/km]": 27.0,
+                "source": "https://ch.oui.sncf/en/help-ch/calculation-co2-emissions-your-train-journey",
+            },
+            TrainType.Eurostar: {
+                "CO2 [g/km]": 11.2,
+                "source": "https://ch.oui.sncf/en/help-ch/calculation-co2-emissions-your-train-journey",
+            },
+            TrainType.Gala: {
+                "CO2 [g/km]": 12.0,
+                "source": "https://ch.oui.sncf/en/help-ch/calculation-co2-emissions-your-train-journey",
+            },
+            TrainType.Intercity: {
+                "CO2 [g/km]": 11.8,
+                "source": "https://ch.oui.sncf/en/help-ch/calculation-co2-emissions-your-train-journey",
+            },
+            TrainType.TER: {
+                "CO2 [g/km]": 29.2,
+                "source": "https://ch.oui.sncf/en/help-ch/calculation-co2-emissions-your-train-journey",
+            },
+            TrainType.TGV: {
+                "CO2 [g/km]": 3.2,
+                "source": "https://ch.oui.sncf/en/help-ch/calculation-co2-emissions-your-train-journey",
+            },
+            TrainType.Thalys: {
+                "CO2 [g/km]": 11.6,
+                "source": "https://ch.oui.sncf/en/help-ch/calculation-co2-emissions-your-train-journey",
+            },
+            TrainType.Transilien: {
+                "CO2 [g/km]": 6.4,
+                "source": "https://ch.oui.sncf/en/help-ch/calculation-co2-emissions-your-train-journey",
+            },
+        },
+    }
+    train_details = carbon_intensities.get(request.railway_company, {}).get(
+        request.train_type, {}
+    )
+    return train_details.get("CO2 [g/km]", default_co2_g_per_km)
+
+
+def build_response(request: TrainCalculatorRequest) -> TrainCalculatorResponse:
     """Build API response"""
-    co2_g_per_km = 10  # default average value
-    for train in train_co2_list:
-        if train["company"] == request.railway_company:
-            if train["train type"] == request.train_type:
-                co2_g_per_km = train["CO2 [g/km]"]
-    total_carbon = co2_g_per_km / 1000 * request.distance
-    return TrainCalculatorResponse(total_carbon_kg=total_carbon)
+    co2_g_per_km = lookup_carbon_intensity_grams(request)
+    total_carbon_kg = co2_g_per_km / 1000 * request.distance
+    return TrainCalculatorResponse(total_carbon_kg=total_carbon_kg)
 
 
-@router.post("/train", response_model=TrainCalculatorResponse)
 def train_calculator(request: TrainCalculatorRequest) -> TrainCalculatorResponse:
     """Calculate CO2 emissions for a train trip"""
     response = build_response(request)
     return response
 
 
-def interface() -> list[dict[str, Any]]:
-    return [request(), response()]
-
-
-def request() -> dict[str, Any]:
-    return TrainCalculatorRequest.schema()
-
-
-def response() -> dict[str, Any]:
-    return TrainCalculatorResponse.schema()
+module = ModuleInterface(
+    name="train_calculator",
+    path="/train",
+    entrypoint=train_calculator,
+    request_model=TrainCalculatorRequest,
+    response_model=TrainCalculatorResponse,
+    get_total_carbon_kg=lambda response: response.total_carbon_kg,
+)

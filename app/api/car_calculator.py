@@ -1,10 +1,8 @@
 from enum import Enum
-from typing import Any
 
 from pydantic import BaseModel, Field, confloat
-from fastapi import APIRouter
 
-router = APIRouter()
+from app.module_interface import ModuleInterface
 
 
 class FuelType(str, Enum):
@@ -17,7 +15,7 @@ class FuelType(str, Enum):
     hybrid = "Hybrid"
     natruralgas = "Natural Gas"
     petrol = "Petrol"
-    plugin = "Plugi-In Hybrid"
+    plugin = "Plug-In Hybrid"
 
 
 class CarType(str, Enum):
@@ -67,33 +65,38 @@ class CarCalculatorResponse(BaseModel):
 def build_response(
     request: CarCalculatorRequest,
 ) -> CarCalculatorResponse:
-    """Build API response"""
-    total_carbon = 0.205 * request.distance  # Private cars in France: 205 g of CO2/km
+    """Build API response
+
+    Sources:
+        https://ch.oui.sncf/en/help-ch/calculation-co2-emissions-your-train-journey
+
+        Average use of private vehicles in France: Sustainable Development and Energy
+        Ministry - Observation and Statistics Department (SOeS)
+
+        Average consumption of passenger vehicles in France and fuel emissions factors:
+        ADEME – Carbon Base
+
+    Private cars in France: 205 g of CO2/km
+    Use of cars in km: 68% diesel and 32% petrol;
+    Consumption: 6.6L/100 km for diesel and 7.8L/100 km for petrol;
+    Emissions factors: 3.07 kg of CO2/L for diesel and 2.71 kg of CO2/L for petrol
+    """
+    car_co2_kg_per_km = 0.205
+    total_carbon = car_co2_kg_per_km * request.distance
     return CarCalculatorResponse(total_carbon_kg=total_carbon)
-    # https://ch.oui.sncf/en/help-ch/calculation-co2-emissions-your-train-journey
-    # source: Average use of private vehicles in France:
-    # Sustainable Development and Energy Ministry - Observation and Statistics Department (SOeS)
-    # Average consumption of passenger vehicles in France and fuel emissions factors:
-    # ADEME – Carbon Base
-    # Use of cars in km: 68% diesel and 32% petrol;
-    # consumption: 6.6L/100 km for diesel and 7.8L/100 km for petrol;
-    # emissions factors: 3.07 kg of CO2/L for diesel and 2.71 kg of CO2/L for petrol
 
 
-@router.post("/car", response_model=CarCalculatorResponse)
-def car_calculator(request: CarCalculatorRequest) -> CarCalculatorResponse:
+async def car_calculator(request: CarCalculatorRequest) -> CarCalculatorResponse:
     """Calculate CO2 emissions for a car trips"""
     response = build_response(request)
     return response
 
 
-def interface() -> list[dict[str, Any]]:
-    return [request(), response()]
-
-
-def request() -> dict[str, Any]:
-    return CarCalculatorRequest.schema()
-
-
-def response() -> dict[str, Any]:
-    return CarCalculatorResponse.schema()
+module = ModuleInterface(
+    name="car_calculator",
+    path="/car",
+    entrypoint=car_calculator,
+    request_model=CarCalculatorRequest,
+    response_model=CarCalculatorResponse,
+    get_total_carbon_kg=lambda response: response.total_carbon_kg,
+)

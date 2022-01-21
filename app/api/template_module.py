@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, confloat
 
 from app.module_interface import ModuleInterface
 
@@ -41,12 +41,14 @@ class TemplateModuleResponse(BaseModel):
     This is the description of the template module Response
     """
 
+    total_carbon_kg: confloat(ge=0.0)
+
     class Config:
         title = "Template Module Response"
 
 
 async def entrypoint(request: TemplateModuleRequest) -> TemplateModuleResponse:
-    return TemplateModuleResponse()
+    return TemplateModuleResponse(total_carbon_kg=0.5 * request.snap)
 
 
 module = ModuleInterface(
@@ -55,5 +57,5 @@ module = ModuleInterface(
     entrypoint=entrypoint,
     request_model=TemplateModuleRequest,
     response_model=TemplateModuleResponse,
-    get_total_carbon_kg=lambda: 0,
+    get_total_carbon_kg=lambda request: request.total_carbon_kg,
 )

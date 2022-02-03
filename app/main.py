@@ -31,8 +31,6 @@ def read_root():
 
 all_connections = []
 events = {}
-connections_by_event = []
-
 
 @app.websocket("/")
 async def websocket_endpoint(websocket: WebSocket):
@@ -41,8 +39,6 @@ async def websocket_endpoint(websocket: WebSocket):
     Websocket protocol (ws or wss).
     """
     await websocket.accept()
-    print("BEK", websocket)
-    print("BEK", websocket.headers)
     all_connections.append(websocket)
     try:
         while True:
@@ -56,13 +52,9 @@ async def websocket_endpoint(websocket: WebSocket):
                 await someone_joined_event(websocket, **data)
 
     except WebSocketDisconnect:
-        all_connections.remove(websocket)
         for event in events.values():
             await event.remove_participant(websocket)
-
-        for connection in connections_by_event:
-            if connection["websocket"] == websocket:
-                connections_by_event.remove(connection)
+        all_connections.remove(websocket)
 
 
 async def create_event(websocket, event_name, event_location, **data):

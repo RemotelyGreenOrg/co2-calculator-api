@@ -1,5 +1,4 @@
-from dataclasses import dataclass
-from typing import Optional, Union, Dict
+from typing import Optional, Union, Dict, Any
 from starlette.websockets import WebSocket
 from pydantic import BaseModel
 from .common import GeoCoordinates, JoinMode
@@ -8,11 +7,10 @@ from .common import GeoCoordinates, JoinMode
 UID = str
 
 
-@dataclass
-class ParticipantModel():
-    location: GeoCoordinates
+class ParticipantModel(BaseModel):
+    location: Union[GeoCoordinates, Dict[str,str]]
     join_mode: JoinMode
-    websocket: WebSocket
+    websocket: Any
     active: bool = True
     uid: Optional[UID] = None
 
@@ -45,7 +43,11 @@ class EventModelWebsocket():
             parti.active = True
             parti.websocket = websocket
         else:
-            parti = ParticipantModel(location, join_mode, websocket, True, uid)
+            parti = ParticipantModel(location=location,
+                                    join_mode=JoinMode[join_mode],
+                                    websocket=websocket,
+                                    active=True,
+                                    uid=uid)
             self.participants[uid] = parti
 
         await self.update_sockets()

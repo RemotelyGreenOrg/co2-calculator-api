@@ -13,7 +13,7 @@ pip install -r requirements.txt
 Run the local development server:
 
 ```bash
-uvicorn app.main:app --reload --log-level debug
+uvicorn app.main:app --reload --reload-dir app --log-level debug
 ```
 
 ## Deployment

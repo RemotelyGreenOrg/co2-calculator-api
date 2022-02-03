@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 
 # Let the DB start
-python /app/backend_pre_start.py
+python /app/prestart.py
 
 # Run migrations
 alembic upgrade head

@@ -4,8 +4,9 @@ from pydantic import BaseSettings
 from starlette.websockets import WebSocket
 from starlette.websockets import WebSocketDisconnect
 
-from app import cost_aggregator
-from app.modules import modules
+from . import cost_aggregator
+from .modules import modules
+from .event import EventModelWebsocket
 
 
 class Settings(BaseSettings):
@@ -29,6 +30,7 @@ def read_root():
 
 
 all_connections = []
+events = {}
 connections_by_event = []
 
 
@@ -39,6 +41,8 @@ async def websocket_endpoint(websocket: WebSocket):
     Websocket protocol (ws or wss).
     """
     await websocket.accept()
+    print("BEK", websocket)
+    print("BEK", websocket.headers)
     all_connections.append(websocket)
     try:
         while True:
@@ -46,55 +50,45 @@ async def websocket_endpoint(websocket: WebSocket):
             if "message" in data:
                 for connection in all_connections:
                     await connection.send_json(data)
-            if "event_name" in data:
-
-                event_name = data["event_name"]
-                connections_by_event.append(
-                    {
-                        "event_name": data["event_name"],
-                        "data": data,
-                        "websocket": websocket,
-                    }
-                )
-
-                connections_for_this_event = [
-                    c for c in connections_by_event if c["event_name"] == event_name
-                ]
-                event_participants = len(connections_by_event)
-                participant_locations = [
-                    (c["data"]["latitude"], c["data"]["longitude"])
-                    for c in connections_for_this_event
-                    if "participant_location" in c["data"]
-                ]
-
-                if event_participants == 1:
-                    await websocket.send_json(
-                        {
-                            "event_name": data["event_name"],
-                            "event_location": data["event_location"],
-                            "event_participants": 0,
-                            "participant_locations": participant_locations,
-                            "calculation": 42 * event_participants,
-                        }
-                    )
-                elif event_participants > 1:
-                    # TODO add event_location
-                    for c in connections_by_event:
-                        await c["websocket"].send_json(
-                            {
-                                "event_name": data["event_name"],
-                                "participant_location": data["participant_location"],
-                                "participant_locations": participant_locations,
-                                "event_participants": event_participants,
-                                "calculation": 42 * event_participants,
-                            }
-                        )
+            if "event_location" in data:
+                await create_event(websocket, **data)
+            if "participant_location" in data:
+                await someone_joined_event(websocket, **data)
 
     except WebSocketDisconnect:
         all_connections.remove(websocket)
+        for event in events.values():
+            await event.remove_participant(websocket)
+
         for connection in connections_by_event:
             if connection["websocket"] == websocket:
                 connections_by_event.remove(connection)
+
+
+async def create_event(websocket, event_name, event_location, **data):
+    event = events.get(event_name, None)
+    if event is None:
+        event = EventModelWebsocket(name=event_name, location=event_location)
+        events[event_name] = event
+
+    await websocket.send_json(
+        {
+            "event_name": event_name,
+            "event_location": event_location,
+            "event_participants": event.num_participants,
+            #"participant_locations": event.participant_locations,
+            #"calculation": 42 * event_participants,
+        })
+
+
+async def someone_joined_event(websocket, event_name, **data):
+    event = events[event_name]
+    await event.add_participant(location=data["location"],
+                                #TODO: Pass through from front end
+                                join_mode="online", 
+                                websocket=websocket,
+                                )
+
 
 
 # ==================================================================

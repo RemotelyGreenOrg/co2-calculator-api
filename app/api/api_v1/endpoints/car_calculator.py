@@ -2,7 +2,7 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, confloat
 
-from app.module_interface import ModuleInterface
+from app.api.api_v1.module_interface import ModuleInterface
 
 
 class FuelType(str, Enum):

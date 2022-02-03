@@ -4,7 +4,7 @@ import pyproj
 import reverse_geocoder
 from pydantic import BaseModel, conlist, confloat
 
-from app.module_interface import ModuleInterface
+from app.api.api_v1.module_interface import ModuleInterface
 
 
 class GeoCoordinates(BaseModel):

@@ -35,3 +35,4 @@ def downgrade():
     op.drop_index(op.f('ix_country_id'), table_name='country')
     op.drop_table('country')
     # ### end Alembic commands ###
+

@@ -2,24 +2,26 @@ from typing import Optional, Union, Dict, Any
 from enum import Enum
 from starlette.websockets import WebSocket
 from pydantic import BaseModel
-from .api.flight_calculator import GeoCoordinates
+from app.api.api_v1.endpoints.flight_calculator import GeoCoordinates
 
 
-JoinMode = Enum('JoinMode', 'online in_person')
+class JoinMode(str, Enum):
+    online = "online"
+    in_person = "in_person"
 
 
 UID = str
 
 
 class ParticipantModel(BaseModel):
-    location: Union[GeoCoordinates, Dict[str,str]]
+    location: Union[GeoCoordinates, Dict[str, str]]
     join_mode: JoinMode
     websocket: Any
     active: bool = True
     uid: Optional[UID] = None
 
 
-class EventModelWebsocket():
+class EventModelWebsocket:
     def __init__(self, name: str, location: Union[GeoCoordinates, str]):
         self.name = name
         self.location = location
@@ -33,13 +35,14 @@ class EventModelWebsocket():
     def participant_locations(self):
         return [p.location for p in self.participants.values()]
 
-    async def add_participant(self,
-                              location: GeoCoordinates,
-                              join_mode: JoinMode,
-                              websocket: WebSocket,
-                              # TODO: uid: str = None
-                              ):
-        #TODO: needs to be provided externally to have any meaning
+    async def add_participant(
+        self,
+        location: GeoCoordinates,
+        join_mode: JoinMode,
+        websocket: WebSocket,
+        # TODO: uid: str = None
+    ):
+        # TODO: needs to be provided externally to have any meaning
         uid = str(self.num_participants)
 
         parti = self.participants.get(uid, None)
@@ -47,11 +50,13 @@ class EventModelWebsocket():
             parti.active = True
             parti.websocket = websocket
         else:
-            parti = ParticipantModel(location=location,
-                                    join_mode=JoinMode[join_mode],
-                                    websocket=websocket,
-                                    active=True,
-                                    uid=uid)
+            parti = ParticipantModel(
+                location=location,
+                join_mode=JoinMode[join_mode],
+                websocket=websocket,
+                active=True,
+                uid=uid,
+            )
             self.participants[uid] = parti
 
         await self.update_sockets()
@@ -81,6 +86,6 @@ class EventModelWebsocket():
                     "participant_location": participant.location,
                     "participant_locations": self.participant_locations,
                     "event_participants": self.num_participants,
-                    "calculation": results
+                    "calculation": results,
                 }
             )

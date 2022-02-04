@@ -1,5 +1,9 @@
 version: '3.7'
 services:
+    co2-calculator-api:
+      image: co2-calculator-api:latest
+      ports:
+        - '8000:8000/tcp'
     postgres:
         image: postgres:10.5
         restart: always

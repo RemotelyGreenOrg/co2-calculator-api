@@ -3,7 +3,7 @@ from typing import Optional, Final, Type
 
 from pydantic import BaseModel, confloat, validator, Field
 
-from app.module_interface import ModuleInterface
+from app.api.api_v1.module_interface import ModuleInterface
 
 
 class ComparisonType(str, Enum):

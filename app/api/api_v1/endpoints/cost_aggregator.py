@@ -5,8 +5,8 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, conlist, confloat
 from pydantic.generics import GenericModel
 
-from app.module_interface import ModuleInterface, RequestT, ResponseT
-from app.modules import modules
+from app.api.api_v1.module_interface import ModuleInterface, RequestT, ResponseT
+from app.api.api_v1.modules import modules
 
 router = APIRouter()
 

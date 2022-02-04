@@ -1,90 +1,22 @@
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
-from pydantic import BaseSettings
-from starlette.websockets import WebSocket
-from starlette.websockets import WebSocketDisconnect
+from starlette.middleware.cors import CORSMiddleware
 
-from . import cost_aggregator
-from .modules import modules
-from .event import EventModelWebsocket
+from app.api.api_v1.api import api_router
+from app.core.config import settings
 
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+)
 
-class Settings(BaseSettings):
-    """Default settings for app
+# Set all CORS enabled origins
+if settings.CORS_ORIGINS:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[str(origin) for origin in settings.CORS_ORIGINS],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
-    These default settings get overridden by environment variables.
-    @see https://fastapi.tiangolo.com/advanced/settings/
-    """
-
-    host: str = "localhost:8000"
-
-
-settings = Settings()
-app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-
-@app.get("/")
-def read_root():
-    return {"message": "OK"}
-
-
-all_connections = []
-events = {}
-
-@app.websocket("/")
-async def websocket_endpoint(websocket: WebSocket):
-    """
-    The websocket endpoint is listening at the root URL and is accessed via the
-    Websocket protocol (ws or wss).
-    """
-    await websocket.accept()
-    all_connections.append(websocket)
-    try:
-        while True:
-            data = await websocket.receive_json()
-            if "message" in data:
-                for connection in all_connections:
-                    await connection.send_json(data)
-            if "event_location" in data:
-                await create_event(websocket, **data)
-            if "participant_location" in data:
-                await someone_joined_event(websocket, **data)
-
-    except WebSocketDisconnect:
-        for event in events.values():
-            await event.remove_participant(websocket)
-        all_connections.remove(websocket)
-
-
-async def create_event(websocket, event_name, event_location, **data):
-    event = events.get(event_name, None)
-    if event is None:
-        event = EventModelWebsocket(name=event_name, location=event_location)
-        events[event_name] = event
-
-    await websocket.send_json(
-        {
-            "event_name": event_name,
-            "event_location": event_location,
-            "event_participants": event.num_participants,
-            #"participant_locations": event.participant_locations,
-            #"calculation": 42 * event_participants,
-        })
-
-
-async def someone_joined_event(websocket, event_name, **data):
-    event = events[event_name]
-    await event.add_participant(location=data["location"],
-                                #TODO: Pass through from front end
-                                join_mode="online", 
-                                websocket=websocket,
-                                )
-
-
-
-# ==================================================================
-# Register modules and routers
-modules.register(app)
-app.include_router(cost_aggregator.router)
-# ==================================================================
+app.include_router(api_router, prefix=settings.API_V1_STR)

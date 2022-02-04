@@ -86,6 +86,16 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db.commit()
         return obj
 
+    def find_and_remove(
+        self,
+        *,
+        db: Session,
+        id: int
+    ) -> ModelType:
+        self.get(db=db, id=id, raise_unfound=True)
+        db_obj = self.remove(db=db, id=id)
+        return db_obj
+
     def _raise_if_unfound(self, obj: ModelType) -> None:
         if not obj:
             raise HTTPException(status_code=404, detail=f"{self.classname} not found")

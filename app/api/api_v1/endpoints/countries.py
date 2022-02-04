@@ -1,7 +1,7 @@
-from typing import Any, List
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends
+from requests import Session
 
 from app import crud, schemas
 from app.api import deps
@@ -15,27 +15,20 @@ def read_country(
     db: Session = Depends(deps.get_db),
     id: int,
 ) -> Any:
-    """
-    Get country by ID.
-    """
-    country = crud.country.get(db=db, id=id)
-    if not country:
-        raise HTTPException(status_code=404, detail="Country not found")
-
-    return country
+    """Get country by ID"""
+    result = crud.country.get(db=db, id=id, raise_unfound=True)
+    return result
 
 
-@router.get("/", response_model=List[schemas.Country])
+@router.get("/", response_model=list[schemas.Country])
 def read_countries(
     db: Session = Depends(deps.get_db),
     skip: int = 0,
     limit: int = 100,
 ) -> Any:
-    """
-    Retrieve countries.
-    """
-    countries = crud.country.get_multi(db=db, skip=skip, limit=limit)
-    return countries
+    """Retrieve countries"""
+    result = crud.country.get_multi(db=db, skip=skip, limit=limit)
+    return result
 
 
 @router.post("/", response_model=schemas.Country)
@@ -44,11 +37,9 @@ def create_country(
     db: Session = Depends(deps.get_db),
     country_in: schemas.CountryCreate,
 ) -> Any:
-    """
-    Create new country.
-    """
-    country = crud.country.create(db=db, obj_in=country_in)
-    return country
+    """Create new country"""
+    result = crud.country.create(db=db, obj_in=country_in)
+    return result
 
 
 @router.put("/{id}", response_model=schemas.Country)
@@ -58,15 +49,9 @@ def update_country(
     id: int,
     country_in: schemas.CountryUpdate,
 ) -> Any:
-    """
-    Update a country.
-    """
-    country = crud.country.get(db=db, id=id)
-    if not country:
-        raise HTTPException(status_code=404, detail="Country not found")
-
-    country = crud.country.update(db=db, db_obj=country, obj_in=country_in)
-    return country
+    """Update a country"""
+    result = crud.country.find_and_update(db=db, id=id, obj_in=country_in)
+    return result
 
 
 @router.delete("/{id}", response_model=schemas.Country)
@@ -75,13 +60,6 @@ def delete_country(
     db: Session = Depends(deps.get_db),
     id: int,
 ) -> Any:
-    """
-    Delete a country.
-    """
-    country = crud.country.get(db=db, id=id)
-
-    if not country:
-        raise HTTPException(status_code=404, detail="Country not found")
-
-    country = crud.country.remove(db=db, id=id)
-    return country
+    """Delete a country"""
+    result = crud.country.find_and_remove(db=db, id=id)
+    return result

@@ -16,11 +16,6 @@ Run the local development server:
 uvicorn app.main:app --reload --reload-dir app --log-level debug
 ```
 
-To start the development database:
-
-```bash
-docker-compose up postgres
-```
 
 ## Deployment
 
@@ -28,4 +23,24 @@ The API is hosted on Heroku at [co2-calculator-api.herokuapp.com](https://co2-ca
 
 ```api
 git push https://git.heroku.com/co2-calculator-api.git main
+```
+
+## Using Docker
+
+To build the application container, use
+
+```bash
+docker build . -t co2-calculator-api
+```
+
+You can then start the container and the development database using
+
+```bash
+docker compose up -d
+```
+
+Alternatively, you can also run locally and use a Docker container only for the development database:
+
+```bash
+docker-compose up postgres
 ```

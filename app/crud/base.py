@@ -69,6 +69,17 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db.refresh(db_obj)
         return db_obj
 
+    def find_and_update(
+        self,
+        db: Session,
+        *,
+        id: int,
+        obj_in: Union[UpdateSchemaType, Dict[str, Any]],
+    ) -> ModelType:
+        db_obj = self.get(db=db, id=id, raise_unfound=True)
+        db_obj = self.update(db=db, db_obj=db_obj, obj_in=obj_in)
+        return db_obj
+
     def remove(self, db: Session, *, id: int) -> ModelType:
         obj = db.query(self.model).get(id)
         db.delete(obj)

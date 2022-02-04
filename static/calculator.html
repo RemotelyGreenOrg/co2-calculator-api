@@ -63,34 +63,36 @@
       }
     }
 
-	function resolveLatLon(onResolve){
-		const latField = document.querySelector('#latitude');
-		const lonField = document.querySelector('#longitude');
+    function resolveLatLon(onResolve){
+        const latField = document.querySelector('#latitude');
+        const lonField = document.querySelector('#longitude');
 
-		function logValues(){
-			var values = new Object();
-			values.latitude = latField.value;
-			values.longitude = lonField.value;
-			values.username = document.querySelector('#username')?.value;
-			values.method = document.querySelector('#participation-method')?.value;
-			values.address = document.querySelector('#address')?.value;
-			values.location_source = document.querySelector('#lat-long-source')?.value;
+        function logValues(){
+            var values = new Object();
+            values.location = {
+                "latitude": latField.value,
+                "longitude": lonField.value,
+                "address": document.querySelector('#address')?.value,
+                "location_source": document.querySelector('#lat-long-source')?.value,
+            };
+            values.username = document.querySelector('#username')?.value;
+            values.method = document.querySelector('#participation-method')?.value;
             onResolve(values);
-			console.log(JSON.stringify(values));
-		}
+            console.log(JSON.stringify(values));
+        }
 
-		if (document.querySelector('#lat-lon-source').value === "address"){
-			const addressField = document.querySelector('#participant_location');
-			get_lat_lon_from_address(addressField.value)
-				.then(lat_lon => {
-					latField.value = lat_lon.lat;
-					lonField.value = lat_lon.lon;
-					logValues();
-				});
-		} else{
-			logValues();
-		}
-	}
+        if (document.querySelector('#lat-lon-source').value === "address"){
+            const addressField = document.querySelector('#participant_location');
+            get_lat_lon_from_address(addressField.value)
+                .then(lat_lon => {
+                    latField.value = lat_lon.lat;
+                    lonField.value = lat_lon.lon;
+                    logValues();
+                });
+        } else{
+            logValues();
+        }
+    }
 
     </script>
   </head>
@@ -190,6 +192,7 @@
 
         if (data.hasOwnProperty("event_name") && data.hasOwnProperty("event_location") && data.hasOwnProperty("event_participants")) {
           const newEventCreated = data.event_participants === 0;
+            console.log("BEK newEventCreated", newEventCreated);
           if (newEventCreated) {
             // Clean up create event section
             createEventForm.removeEventListener("submit", onEventCreateFormSubmit);
@@ -208,18 +211,19 @@
             const viewEventButton = sectionCreateEventConfirmation.querySelector("button");
             viewEventButton.addEventListener("click", onViewEventClick);
             sectionCreateEventConfirmation.style.display = "block";
+          } else if (data.hasOwnProperty("calculation")) {
+            console.log("BEK entered here");
+            sectionJoinEvent.style.display = "none";
+
+            sectionDashboard.querySelector("#co2").innerHTML = data.calculation;
+            sectionDashboard.style.display = "block";
+
+            sectionDashboard.querySelector("#n-participants").innerHTML = data.event_participants;
+            sectionDashboard.style.display = "block";
+
+            sectionDashboard.querySelector("#participant-locations").innerHTML = data.participant_locations;
+            sectionDashboard.style.display = "block";
           }
-        } else if (data.hasOwnProperty("calculation")) {
-          sectionJoinEvent.style.display = "none";
-
-          sectionDashboard.querySelector("#co2").innerHTML = data.calculation;
-          sectionDashboard.style.display = "block";
-
-          sectionDashboard.querySelector("#n-participants").innerHTML = data.event_participants;
-          sectionDashboard.style.display = "block";
-
-          sectionDashboard.querySelector("#participant-locations").innerHTML = data.participant_locations;
-          sectionDashboard.style.display = "block";
         }
       }
 

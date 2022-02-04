@@ -22,18 +22,27 @@ class ParticipantModel(BaseModel):
 
 
 class EventModelWebsocket:
-    def __init__(self, name: str, location: Union[GeoCoordinates, str]):
+    def __init__(self, name: str, location: Union[GeoCoordinates, str], calculator):
         self.name = name
         self.location = location
-        self.participants = {}
+        self._participants = {}
+        self.calculator = calculator
 
     @property
     def num_participants(self):
-        return len(self.participants)
+        return len(self._participants)
+
+    @property
+    def participants(self):
+        return self._participants.values()
 
     @property
     def participant_locations(self):
-        return [p.location for p in self.participants.values()]
+        return [p.location for p in self._participants.values()]
+
+    @property
+    def all_uids(self):
+        return [p.uid for p in self._participants.values()]
 
     async def add_participant(
         self,
@@ -45,7 +54,7 @@ class EventModelWebsocket:
         # TODO: needs to be provided externally to have any meaning
         uid = str(self.num_participants)
 
-        parti = self.participants.get(uid, None)
+        parti = self._participants.get(uid, None)
         if parti:
             parti.active = True
             parti.websocket = websocket
@@ -57,26 +66,23 @@ class EventModelWebsocket:
                 active=True,
                 uid=uid,
             )
-            self.participants[uid] = parti
+            self._participants[uid] = parti
 
         await self.update_sockets()
 
     async def remove_participant(self, websocket: WebSocket):
         # TODO: This should work of UID not websockets...
-        for participant in self.participants.values():
+        for participant in self._participants.values():
             if participant.websocket == websocket:
                 participant.active = False
                 participant.websocket = None
 
         await self.update_sockets()
 
-    def compute_footprint(self):
-        return 42 * self.num_participants
-
     async def update_sockets(self):
-        results = self.compute_footprint()
+        results = self.calculator(self)
 
-        for participant in self.participants.values():
+        for participant in self._participants.values():
             if not participant.active:
                 continue
             await participant.websocket.send_json(
@@ -86,6 +92,6 @@ class EventModelWebsocket:
                     "participant_location": participant.location,
                     "participant_locations": self.participant_locations,
                     "event_participants": self.num_participants,
-                    "calculation": results,
+                    "calculation": results
                 }
             )

@@ -3,6 +3,7 @@ from starlette.websockets import WebSocket
 from starlette.websockets import WebSocketDisconnect
 
 from app.schemas.event import EventModelWebsocket
+from app.api.api_v1.endpoints.prebuilt_calculators import BasicCalculator
 
 router = APIRouter()
 
@@ -38,7 +39,9 @@ async def websocket_endpoint(websocket: WebSocket):
 async def create_event(websocket, event_name, event_location, **data):
     event = events.get(event_name, None)
     if event is None:
-        event = EventModelWebsocket(name=event_name, location=event_location)
+        event = EventModelWebsocket(name=event_name,
+                                    location=event_location,
+                                    calculator=BasicCalculator())
         events[event_name] = event
 
     await websocket.send_json(

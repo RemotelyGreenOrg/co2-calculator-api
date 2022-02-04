@@ -17,4 +17,4 @@ class Participant(Base):
     lon = Column(Float)
     lat = Column(Float)
     active = Column(Boolean)
-    event_id = Column(Integer, ForeignKey('event.id'))
+    event_id = Column(Integer, ForeignKey('events.id'))

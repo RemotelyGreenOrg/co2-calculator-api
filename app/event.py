@@ -1,7 +1,11 @@
 from typing import Optional, Union, Dict, Any
+from enum import Enum
 from starlette.websockets import WebSocket
 from pydantic import BaseModel
-from .common import GeoCoordinates, JoinMode
+from .api.flight_calculator import GeoCoordinates
+
+
+JoinMode = Enum('JoinMode', 'online in_person')
 
 
 UID = str

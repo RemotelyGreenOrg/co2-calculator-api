@@ -3,9 +3,20 @@ import json
 import pyproj
 import reverse_geocoder
 from pydantic import BaseModel, conlist, confloat
-from ..common import GeoCoordinates, Country
+
 
 from app.module_interface import ModuleInterface
+
+
+class GeoCoordinates(BaseModel):
+    lon: confloat(ge=-180.0, lt=180.0)
+    lat: confloat(ge=-90.0, lt=90.0)
+
+
+class Country(BaseModel):
+    iso_code: str
+    name: str
+    coordinates: GeoCoordinates
 
 
 class FlightStage(BaseModel):

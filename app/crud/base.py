@@ -1,5 +1,6 @@
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 
+from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -12,19 +13,28 @@ UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
 
 class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
-    def __init__(self, model: Type[ModelType]):
-        """
-        CRUD object with default methods to Create, Read, Update, Delete (CRUD).
+    def __init__(self, model: Type[ModelType]) -> None:
+        """CRUD object with default methods to Create, Read, Update, Delete (CRUD)
 
-        **Parameters**
-
-        * `model`: A SQLAlchemy model class
-        * `schema`: A Pydantic model (schema) class
+        Args:
+            model: A SQLAlchemy model class
         """
+        self.classname = model.__class__.__name__
+        self.tablename = model.__tablename__
         self.model = model
 
-    def get(self, db: Session, id: Any) -> Optional[ModelType]:
-        return db.query(self.model).filter(self.model.id == id).first()
+    def get(
+        self,
+        db: Session,
+        id: Any,
+        raise_unfound: bool = False,
+    ) -> Optional[ModelType]:
+        result = db.query(self.model).filter(self.model.id == id).first()
+
+        if raise_unfound:
+            self._raise_if_unfound(result)
+
+        return result
 
     def get_multi(
         self, db: Session, *, skip: int = 0, limit: int = 100
@@ -44,7 +54,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db: Session,
         *,
         db_obj: ModelType,
-        obj_in: Union[UpdateSchemaType, Dict[str, Any]]
+        obj_in: Union[UpdateSchemaType, Dict[str, Any]],
     ) -> ModelType:
         obj_data = jsonable_encoder(db_obj)
         if isinstance(obj_in, dict):
@@ -64,3 +74,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db.delete(obj)
         db.commit()
         return obj
+
+    def _raise_if_unfound(self, obj: ModelType) -> None:
+        if not obj:
+            raise HTTPException(status_code=404, detail=f"{self.classname} not found")

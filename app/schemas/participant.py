@@ -11,6 +11,7 @@ class ParticipantBase(BaseModel):
     lon: Optional[float] = None
     lat: Optional[float] = None
     active: Optional[bool] = None
+    event_id: Optional[int] = None
 
 
 # Properties to receive on country creation
@@ -19,6 +20,7 @@ class ParticipantCreate(ParticipantBase):
     lon: float
     lat: float
     active: bool = True
+    event_id: int
 
 
 # Properties to receive on update
@@ -33,6 +35,7 @@ class ParticipantInDBBase(ParticipantBase):
     lon: float
     lat: float
     active: bool
+    event_id: int
 
     class Config:
         orm_mode = True

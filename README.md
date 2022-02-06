@@ -10,10 +10,16 @@ To build the application container, use
 docker build . -t co2-calculator-api
 ```
 
-You can then start the container and the development database using
+You can then start the app and database containers using:
 
 ```bash
-docker compose up -d
+docker compose up --detach
+```
+
+Or just start the database using:
+
+```bash
+docker-compose up --detach database
 ```
 
 ### Using Locally installed Python and Postgres

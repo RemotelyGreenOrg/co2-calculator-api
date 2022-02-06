@@ -10,11 +10,10 @@ class Settings(BaseSettings):
     @see https://fastapi.tiangolo.com/advanced/settings/
     """
 
-    PROJECT_NAME: str
+    PROJECT_NAME: str = "co2-calculator-api"
 
     API_V1_STR: str = ""
-    # SERVER_NAME: str
-    SERVER_HOST: AnyHttpUrl
+    SERVER_HOST: AnyHttpUrl = "http://localhost:8000"
 
     # CORS_ORIGINS is a JSON-formatted list of origins
     CORS_ORIGINS: List[AnyHttpUrl] = [
@@ -34,10 +33,11 @@ class Settings(BaseSettings):
 
         raise ValueError(v)
 
-    POSTGRES_SERVER: str
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
-    POSTGRES_DB: str
+    # Postgres
+    POSTGRES_SERVER: str = "localhost:5432"
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: str = "postgres"
+    POSTGRES_DB: str = "postgres"
     SQLALCHEMY_DATABASE_URI: Optional[PostgresDsn] = None
 
     @validator("SQLALCHEMY_DATABASE_URI", pre=True)
@@ -55,8 +55,6 @@ class Settings(BaseSettings):
 
     class Config:
         case_sensitive = True
-        env_file = ".env"
-        env_file_encoding = "utf-8"
 
 
 settings = Settings()

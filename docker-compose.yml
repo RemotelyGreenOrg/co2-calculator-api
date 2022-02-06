@@ -1,7 +1,13 @@
 version: '3.7'
 services:
-    postgres:
-        image: postgres:10.5
+    app:
+      image: co2-calculator-api:latest
+      ports:
+        - '8000:8000/tcp'
+      volumes:
+        - ./:/app
+    database:
+        image: postgres:13.5
         restart: always
         environment:
           - POSTGRES_USER=postgres
@@ -14,4 +20,6 @@ services:
         ports:
           - '5432:5432'
         volumes:
-          - ./postgres-data:/var/lib/postgresql/data
+          - postgres-data:/var/lib/postgresql/data
+volumes:
+  postgres-data:

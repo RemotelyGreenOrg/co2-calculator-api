@@ -10,4 +10,4 @@ WORKDIR /app/
 
 EXPOSE 8000
 
-CMD [ "uvicorn", "app.main:app", "--reload", "--reload-dir", "app", "--log-level", "debug", "--host", "0.0.0.0" ]
+CMD [ "uvicorn", "app.main:app", "--reload", "--reload-dir", "app", "--log-level", "info", "--host", "0.0.0.0" ]

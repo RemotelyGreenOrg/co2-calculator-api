@@ -106,7 +106,7 @@
         </div>
         <div>
           <label for="event_location">Your event's location:</label>
-          <input type="text" id="event_location" name="event_location" autocomplete="off" required />
+          <input type="text" id="event_location" name="event_location" autocomplete="off" disabled value="CERN, Geneva, Switzerland" />
         </div>
         <p>
           <small>If there's a physical centre where people can travel to, enter this. If the event is fully online, enter your best guess at where you would have been if you'd have met physically.</small>
@@ -168,7 +168,9 @@
       function onEventCreateFormSubmit(event) {
         event.preventDefault();
         const event_name = event.target.querySelector("#event_name").value;
-        const event_location = event.target.querySelector("#event_location").value;
+        // TODO: Stop hard-coding CERN location
+        const CERN_pos = {"longitude": 6.0712016, "latitude": 46.2283226};
+        const event_location = CERN_pos; //event.target.querySelector("#event_location").value;
         const data = { event_name, event_location };
         console.log("websocket.send", data);
         websocket.send(JSON.stringify(data));
@@ -215,13 +217,13 @@
             console.log("BEK entered here");
             sectionJoinEvent.style.display = "none";
 
-            sectionDashboard.querySelector("#co2").innerHTML = data.calculation;
+            sectionDashboard.querySelector("#co2").innerHTML = JSON.stringify(data.calculation);
             sectionDashboard.style.display = "block";
 
             sectionDashboard.querySelector("#n-participants").innerHTML = data.event_participants;
             sectionDashboard.style.display = "block";
 
-            sectionDashboard.querySelector("#participant-locations").innerHTML = data.participant_locations;
+            sectionDashboard.querySelector("#participant-locations").innerHTML = JSON.stringify(data.participant_locations);
             sectionDashboard.style.display = "block";
           }
         }

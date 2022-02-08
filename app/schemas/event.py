@@ -80,7 +80,7 @@ class EventModelWebsocket:
         await self.update_sockets()
 
     async def update_sockets(self):
-        results = self.calculator(self)
+        results = await self.calculator(self)
 
         for participant in self._participants.values():
             if not participant.active:

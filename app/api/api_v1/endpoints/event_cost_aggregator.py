@@ -1,7 +1,7 @@
 import asyncio
 
 from fastapi import APIRouter
-from vc_calculator.interface import OnlineDetails
+from vc_calculator.interface import OnlineDetails, ConnectionTypes, KnownDevicesEnum
 
 from app.api.api_v1.endpoints.cost_aggregator import (
     cost_aggregator,
@@ -23,29 +23,34 @@ def build_in_person_cost_path(participant, end: GeoCoordinates) -> CostPath:
     start = GeoCoordinates(lon=location["longitude"], lat=location["latitude"])
     flight_stage = FlightStage(start=start, end=end, one_way=False)
     in_person_path = CostPath(
-        title="In Person Attendance",
+        title="In-Person Attendance",
         cost_items=[
             CostItem(
-                module=flight_calculator.module.name,
-                propertices=FlightCalculatorRequest(stages=[flight_stage]).dict(),
+                calculator_name=flight_calculator.calculator_interface.name,
+                request=FlightCalculatorRequest(stages=[flight_stage]).dict(),
             )
         ],
     )
     return in_person_path
 
 
-def build_online_cost_path(event):
+def build_online_cost_path(total_participants: int) -> CostPath:
     details = OnlineDetails(
-        location=None,  # str,
-        device_list=None,  # List[Union[HardwareDetails, KnownDevicesEnum]],
-        bandwidth=None,  # float,
-        total_participants=None,  # int,
-        software=None,  # Optional[str],
-        connection=None,  # Optional[ConnectionTypes],
+        location="home",
+        device_list=[KnownDevicesEnum.pc],
+        bandwidth=5,
+        total_participants=total_participants,
+        software="linux",
+        connection=ConnectionTypes.wifi,
     )
     online_path = CostPath(
         title="Online Attendance",
-        cost_items=[CostItem(module=online.module.name, propertices=details.dict())],
+        cost_items=[
+            CostItem(
+                calculator_name=online.calculator_interface.name,
+                request=details.dict(),
+            )
+        ],
     )
     return online_path
 

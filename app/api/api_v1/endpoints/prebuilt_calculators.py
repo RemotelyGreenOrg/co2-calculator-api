@@ -6,12 +6,12 @@ def build_inperson_request(event):
     stages = []
 
     end = inperson.GeoCoordinates(
-                lat=event.location["latitude"],
-                lon=event.location["longitude"])
+        lat=event.location["latitude"], lon=event.location["longitude"]
+    )
     for participant in event.participants:
         start = inperson.GeoCoordinates(
-                    lat=participant.location["latitude"],
-                    lon=participant.location["longitude"])
+            lat=participant.location["latitude"], lon=participant.location["longitude"]
+        )
         single_stage = dict(start=start, end=end, one_way=False)
         stages.append(single_stage)
     request = dict(stages=stages)
@@ -22,12 +22,12 @@ def build_online_request(event):
     pass
 
 
-class BasicCalculator():
+class BasicCalculator:
     def __init__(self):
         self.basic_device_list = []
 
     async def __call__(self, event):
-        results_inperson = await inperson.flight_calculator(build_inperson_request(event))
-        #results_online = await online.online_calculator(build_online_request(event))
-
+        inperson_request = build_inperson_request(event)
+        results_inperson = await inperson.flight_calculator(inperson_request)
+        results_online = await online.online_calculator(build_online_request(event))
         return results_inperson.dict()

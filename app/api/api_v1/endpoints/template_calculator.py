@@ -17,7 +17,7 @@ class Gender(str, Enum):
     not_given = "not_given"
 
 
-class TemplateModuleRequest(BaseModel):
+class TemplateCalculatorRequest(BaseModel):
     """
     This is the description of the template module Request
     """
@@ -33,10 +33,10 @@ class TemplateModuleRequest(BaseModel):
     )
 
     class Config:
-        title = "Template Module Request"
+        title = "Template Calculator Request"
 
 
-class TemplateModuleResponse(BaseModel):
+class TemplateCalculatorResponse(BaseModel):
     """
     This is the description of the template module Response
     """
@@ -44,18 +44,18 @@ class TemplateModuleResponse(BaseModel):
     total_carbon_kg: confloat(ge=0.0)
 
     class Config:
-        title = "Template Module Response"
+        title = "Template Calculator Response"
 
 
-async def entrypoint(request: TemplateModuleRequest) -> TemplateModuleResponse:
-    return TemplateModuleResponse(total_carbon_kg=0.5 * request.snap)
+async def entrypoint(request: TemplateCalculatorRequest) -> TemplateCalculatorResponse:
+    return TemplateCalculatorResponse(total_carbon_kg=0.5 * request.snap)
 
 
 module = CalculatorInterface(
-    name="template_module",
-    path="/template-module",
+    name="template_calculator",
+    path="/template-calculator",
     entrypoint=entrypoint,
-    request_model=TemplateModuleRequest,
-    response_model=TemplateModuleResponse,
+    request_model=TemplateCalculatorRequest,
+    response_model=TemplateCalculatorResponse,
     get_total_carbon_kg=lambda request: request.total_carbon_kg,
 )

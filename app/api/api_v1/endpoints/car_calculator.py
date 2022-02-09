@@ -2,7 +2,7 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, confloat
 
-from app.api.api_v1.module_interface import ModuleInterface
+from app.api.api_v1.calculator_interface import CalculatorInterface
 
 
 class FuelType(str, Enum):
@@ -92,7 +92,7 @@ async def car_calculator(request: CarCalculatorRequest) -> CarCalculatorResponse
     return response
 
 
-module = ModuleInterface(
+calculator_interface = CalculatorInterface(
     name="car_calculator",
     path="/car",
     entrypoint=car_calculator,

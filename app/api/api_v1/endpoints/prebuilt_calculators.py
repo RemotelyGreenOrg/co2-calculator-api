@@ -1,5 +1,5 @@
-from . import flight_calculator as inperson
-from . import online_calculator as online
+from app.api.api_v1.endpoints import flight_calculator as inperson
+from app.api.api_v1.endpoints import online_calculator as online
 
 
 def build_inperson_request(event):

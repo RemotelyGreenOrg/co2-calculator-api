@@ -69,16 +69,20 @@ class EventModelWebsocket:
         return len(self._participants)
 
     @property
+    def participants_dict(self):
+        return self._participants
+
+    @property
     def participants(self):
         return self._participants.values()
 
     @property
     def participant_locations(self):
-        return [p.location for p in self._participants.values()]
+        return [p.location for p in self.participants]
 
     @property
     def all_uids(self):
-        return [p.uid for p in self._participants.values()]
+        return [p.uid for p in self.participants]
 
     async def add_participant(
         self,
@@ -108,7 +112,7 @@ class EventModelWebsocket:
 
     async def remove_participant(self, websocket: WebSocket):
         # TODO: This should work of UID not websockets...
-        for participant in self._participants.values():
+        for participant in self.participants:
             if participant.websocket == websocket:
                 participant.active = False
                 participant.websocket = None
@@ -118,7 +122,7 @@ class EventModelWebsocket:
     async def update_sockets(self):
         results = await self.calculator(self)
 
-        for participant in self._participants.values():
+        for participant in self.participants:
             if not participant.active:
                 continue
             await participant.websocket.send_json(

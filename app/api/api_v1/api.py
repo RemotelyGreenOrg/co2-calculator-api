@@ -9,7 +9,7 @@ from app.api.api_v1.endpoints import (
     events,
     participants,
 )
-from app.api.api_v1.modules import modules
+from app.api.api_v1.calculators import calculators
 
 api_router = APIRouter()
 
@@ -41,4 +41,4 @@ api_router.include_router(
     tags=["participants"],
 )
 
-modules.register(api_router)
+calculators.register(api_router)

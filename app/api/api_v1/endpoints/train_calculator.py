@@ -2,7 +2,7 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, confloat
 
-from app.api.api_v1.module_interface import ModuleInterface
+from app.api.api_v1.calculator_interface import CalculatorInterface
 
 
 class TrainType(str, Enum):
@@ -123,7 +123,7 @@ def train_calculator(request: TrainCalculatorRequest) -> TrainCalculatorResponse
     return response
 
 
-module = ModuleInterface(
+module = CalculatorInterface(
     name="train_calculator",
     path="/train",
     entrypoint=train_calculator,

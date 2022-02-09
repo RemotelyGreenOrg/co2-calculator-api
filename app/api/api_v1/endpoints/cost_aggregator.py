@@ -5,8 +5,8 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, conlist, confloat
 from pydantic.generics import GenericModel
 
-from app.api.api_v1.module_interface import ModuleInterface, RequestT, ResponseT
-from app.api.api_v1.modules import modules
+from app.api.api_v1.calculator_interface import CalculatorInterface, RequestT, ResponseT
+from app.api.api_v1.calculators import calculators
 
 router = APIRouter()
 
@@ -23,7 +23,7 @@ class CostPath(BaseModel):
 
 class CostItemValidated(GenericModel, Generic[ResponseT, RequestT]):
     item: CostItem
-    module: ModuleInterface[ResponseT, RequestT]
+    module: CalculatorInterface[ResponseT, RequestT]
     request: RequestT
 
 
@@ -51,7 +51,7 @@ class CostAggregatorResponse(BaseModel):
 
 
 def validate_request_paths(cost_paths: list[CostPath]) -> list[CostPathValidated]:
-    modules_by_name = modules.modules_by_name
+    modules_by_name = calculators.modules_by_name
     cost_paths_validated = []
     errors = []
 

@@ -4,7 +4,7 @@ import pyproj
 import reverse_geocoder
 from pydantic import BaseModel, conlist, confloat
 
-from app.api.api_v1.module_interface import ModuleInterface
+from app.api.api_v1.calculator_interface import CalculatorInterface
 from app.schemas.common import GeoCoordinates
 
 
@@ -244,7 +244,7 @@ async def flight_calculator(
     return response
 
 
-module = ModuleInterface(
+module = CalculatorInterface(
     name="flight_calculator",
     path="/flight",
     entrypoint=flight_calculator,

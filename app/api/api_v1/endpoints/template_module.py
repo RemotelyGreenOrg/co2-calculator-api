@@ -2,7 +2,7 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, confloat
 
-from app.api.api_v1.module_interface import ModuleInterface
+from app.api.api_v1.calculator_interface import CalculatorInterface
 
 
 class FooBar(BaseModel):
@@ -51,7 +51,7 @@ async def entrypoint(request: TemplateModuleRequest) -> TemplateModuleResponse:
     return TemplateModuleResponse(total_carbon_kg=0.5 * request.snap)
 
 
-module = ModuleInterface(
+module = CalculatorInterface(
     name="template_module",
     path="/template-module",
     entrypoint=entrypoint,

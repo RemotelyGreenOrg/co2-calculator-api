@@ -1,9 +1,9 @@
 from app.api.api_v1.endpoints import online_calculator, train_calculator, \
     template_module, car_calculator, comparison_calculator, flight_calculator
-from app.api.api_v1.module_interface import ModuleInterfaces
+from app.api.api_v1.calculator_interface import CalculatorInterfaces
 
 
-modules = ModuleInterfaces(
+calculators = CalculatorInterfaces(
     [
         car_calculator.module,
         comparison_calculator.module,

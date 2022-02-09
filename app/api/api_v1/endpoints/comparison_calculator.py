@@ -3,7 +3,7 @@ from typing import Optional, Final, Type
 
 from pydantic import BaseModel, confloat, validator, Field
 
-from app.api.api_v1.module_interface import ModuleInterface
+from app.api.api_v1.calculator_interface import CalculatorInterface
 
 
 class ComparisonType(str, Enum):
@@ -163,7 +163,7 @@ async def comparison_calculator(
     return response
 
 
-module = ModuleInterface(
+calculator_interface = CalculatorInterface(
     name="comparison_calculator",
     path="/comparison",
     entrypoint=comparison_calculator,

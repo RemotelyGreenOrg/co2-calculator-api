@@ -51,7 +51,7 @@ async def entrypoint(request: TemplateCalculatorRequest) -> TemplateCalculatorRe
     return TemplateCalculatorResponse(total_carbon_kg=0.5 * request.snap)
 
 
-module = CalculatorInterface(
+calculator_interface = CalculatorInterface(
     name="template_calculator",
     path="/template-calculator",
     entrypoint=entrypoint,

@@ -20,7 +20,7 @@ def get_total_carbon_kg(response: online.OnlineCalculatorResponse) -> float:
     return statistics.mean([emissions.low, emissions.high])
 
 
-module = CalculatorInterface(
+calculator_interface = CalculatorInterface(
     name="online_calculator",
     path="/online",
     entrypoint=online_calculator,

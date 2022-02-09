@@ -123,7 +123,7 @@ def train_calculator(request: TrainCalculatorRequest) -> TrainCalculatorResponse
     return response
 
 
-module = CalculatorInterface(
+calculator_interface = CalculatorInterface(
     name="train_calculator",
     path="/train",
     entrypoint=train_calculator,

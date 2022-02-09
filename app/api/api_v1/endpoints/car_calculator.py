@@ -92,7 +92,7 @@ async def car_calculator(request: CarCalculatorRequest) -> CarCalculatorResponse
     return response
 
 
-module = CalculatorInterface(
+calculator_interface = CalculatorInterface(
     name="car_calculator",
     path="/car",
     entrypoint=car_calculator,

@@ -244,7 +244,7 @@ async def flight_calculator(
     return response
 
 
-module = CalculatorInterface(
+calculator_interface = CalculatorInterface(
     name="flight_calculator",
     path="/flight",
     entrypoint=flight_calculator,

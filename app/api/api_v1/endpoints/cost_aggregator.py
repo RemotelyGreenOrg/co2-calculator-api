@@ -12,19 +12,19 @@ router = APIRouter()
 
 
 class CostItem(BaseModel):
-    module: str
-    properties: Any
+    calculator_name: str
+    request: Any
+
+
+class CostItemValidated(GenericModel, Generic[ResponseT, RequestT]):
+    item: CostItem
+    calculator: CalculatorInterface[ResponseT, RequestT]
+    request: RequestT
 
 
 class CostPath(BaseModel):
     title: str
     cost_items: conlist(CostItem, min_items=1)
-
-
-class CostItemValidated(GenericModel, Generic[ResponseT, RequestT]):
-    item: CostItem
-    module: CalculatorInterface[ResponseT, RequestT]
-    request: RequestT
 
 
 class CostPathValidated(CostPath):
@@ -51,7 +51,7 @@ class CostAggregatorResponse(BaseModel):
 
 
 def validate_request_paths(cost_paths: list[CostPath]) -> list[CostPathValidated]:
-    modules_by_name = calculators.modules_by_name
+    calculators_by_name = calculators.calculators_by_name
     cost_paths_validated = []
     errors = []
 
@@ -61,10 +61,10 @@ def validate_request_paths(cost_paths: list[CostPath]) -> list[CostPathValidated
 
         for cost_item in cost_path.cost_items:
             try:
-                module = modules_by_name[cost_item.module]
-                request = module.request_model(**cost_item.properties)
+                calculator = calculators_by_name[cost_item.calculator_name]
+                request = calculator.request_model(**cost_item.request)
                 validated_item = CostItemValidated(
-                    item=cost_item, module=module, request=request
+                    item=cost_item, calculator=calculator, request=request
                 )
                 cost_items_validated.append(validated_item)
             except pydantic.ValidationError as error:
@@ -82,7 +82,7 @@ def validate_request_paths(cost_paths: list[CostPath]) -> list[CostPathValidated
                         "title": title,
                         "cost_item": cost_item.dict(),
                         "error_type": "KeyError",
-                        "error": f"Unknown module: ({error})",
+                        "error": f"Unknown calculator: ({error})",
                     }
                 )
 
@@ -107,9 +107,9 @@ async def cost_aggregator(request: CostAggregatorRequest) -> CostAggregatorRespo
         total_carbon_kg = 0.0
 
         for cost_item in cost_path.cost_items:
-            item, module = cost_item.item, cost_item.module
-            response = await module.entrypoint(cost_item.request)
-            total_carbon_kg += module.get_total_carbon_kg(response)
+            item, calculator = cost_item.item, cost_item.calculator
+            response = await calculator.entrypoint(cost_item.request)
+            total_carbon_kg += calculator.get_total_carbon_kg(response)
             item_response = CostItemResponse(cost_item=item, response=response)
             cost_item_responses.append(item_response)
 

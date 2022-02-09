@@ -163,7 +163,7 @@ async def comparison_calculator(
     return response
 
 
-module = CalculatorInterface(
+calculator_interface = CalculatorInterface(
     name="comparison_calculator",
     path="/comparison",
     entrypoint=comparison_calculator,

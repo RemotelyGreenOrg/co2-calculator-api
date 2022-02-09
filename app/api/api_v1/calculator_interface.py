@@ -34,37 +34,39 @@ class CalculatorInterface(GenericModel, Generic[RequestT, ResponseT]):
 
 class CalculatorInterfaces:
     def __init__(
-        self: "CalculatorInterfaces", module_interfaces: list[CalculatorInterface]
+        self: "CalculatorInterfaces", calculator_interfaces: list[CalculatorInterface]
     ) -> None:
-        self._modules = module_interfaces
-        self._modules_by_name = {m.name: m for m in module_interfaces}
+        self._calculators = calculator_interfaces
+        self._calculators_by_name = {m.name: m for m in calculator_interfaces}
 
     @property
-    def modules(self: "CalculatorInterfaces") -> list[CalculatorInterface]:
-        return self._modules
+    def calculators(self: "CalculatorInterfaces") -> list[CalculatorInterface]:
+        return self._calculators
 
     @property
-    def modules_by_name(self: "CalculatorInterfaces") -> dict[str, CalculatorInterface]:
-        return self._modules_by_name
+    def calculators_by_name(
+        self: "CalculatorInterfaces",
+    ) -> dict[str, CalculatorInterface]:
+        return self._calculators_by_name
 
     @property
     def interfaces(self: "CalculatorInterfaces") -> list[dict[str, Any]]:
-        interfaces = [module.interface for module in self.modules]
+        interfaces = [calculator.interface for calculator in self.calculators]
         interfaces = list(itertools.chain.from_iterable(interfaces))
         return interfaces
 
     @property
     def request_schemas(self: "CalculatorInterfaces") -> list[dict[str, Any]]:
-        return [module.request_schema for module in self.modules]
+        return [calculator.request_schema for calculator in self.calculators]
 
     @property
     def response_schemas(self: "CalculatorInterfaces") -> list[dict[str, Any]]:
-        return [module.response_schema for module in self.modules]
+        return [calculator.response_schema for calculator in self.calculators]
 
-    async def get_modules(
+    async def get_calculators(
         self: "CalculatorInterfaces",
     ) -> dict[str, list[dict[str, Any]]]:
-        return {"modules": self.interfaces}
+        return {"calculators": self.interfaces}
 
     async def get_requests(
         self: "CalculatorInterfaces",
@@ -79,17 +81,17 @@ class CalculatorInterfaces:
     def register(self: "CalculatorInterfaces", app: FastAPI) -> None:
         router = APIRouter()
 
-        for module in self.modules:
+        for calculator in self.calculators:
             router.add_api_route(
-                path=module.path,
-                endpoint=module.entrypoint,
-                name=module.name,
-                methods=[module.method],
-                response_model=module.response_model,
-                **(module.router_args or {}),
+                path=calculator.path,
+                endpoint=calculator.entrypoint,
+                name=calculator.name,
+                methods=[calculator.method],
+                response_model=calculator.response_model,
+                **(calculator.router_args or {}),
             )
 
-        app.add_route("/calculators", self.get_modules)
+        app.add_route("/calculators", self.get_calculators)
         app.add_route("/calculator-requests", self.get_requests)
         app.add_route("/calculator-responses", self.get_responses)
         app.include_router(router)

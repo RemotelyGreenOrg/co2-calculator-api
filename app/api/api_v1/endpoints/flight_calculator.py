@@ -5,11 +5,7 @@ import reverse_geocoder
 from pydantic import BaseModel, conlist, confloat
 
 from app.api.api_v1.module_interface import ModuleInterface
-
-
-class GeoCoordinates(BaseModel):
-    lon: confloat(ge=-180.0, lt=180.0)
-    lat: confloat(ge=-90.0, lt=90.0)
+from app.schemas.common import GeoCoordinates
 
 
 class Country(BaseModel):

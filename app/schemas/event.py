@@ -1,20 +1,56 @@
-from typing import Optional, Union, Dict, Any
-from enum import Enum
-from starlette.websockets import WebSocket
+from typing import Optional, Union, Any
+
 from pydantic import BaseModel
-from app.api.api_v1.endpoints.flight_calculator import GeoCoordinates
+from starlette.websockets import WebSocket
+
+from app.schemas.common import GeoCoordinates, JoinMode
 
 
-class JoinMode(str, Enum):
-    online = "online"
-    in_person = "in_person"
+# Shared properties
+class EventBase(BaseModel):
+    name: Optional[str] = None
+    lon: Optional[float] = None
+    lat: Optional[float] = None
+
+
+# Properties to receive on country creation
+class EventCreate(EventBase):
+    name: str
+    lon: float
+    lat: float
+
+
+# Properties to receive on update
+class EventUpdate(EventBase):
+    pass
+
+
+# Properties shared by models stored in DB
+class EventInDBBase(EventBase):
+    id: int
+    name: str
+    lon: float
+    lat: float
+
+    class Config:
+        orm_mode = True
+
+
+# Properties stored in DB
+class EventInDB(EventInDBBase):
+    pass
+
+
+# Properties to return to client
+class Event(EventInDBBase):
+    pass
 
 
 UID = str
 
 
 class ParticipantModel(BaseModel):
-    location: Union[GeoCoordinates, Dict[str, str]]
+    location: Union[GeoCoordinates, dict[str, str]]
     join_mode: JoinMode
     websocket: Any
     active: bool = True

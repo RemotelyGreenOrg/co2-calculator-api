@@ -16,7 +16,7 @@ def read_participant(
     id: int,
 ) -> Any:
     """Get participant by ID"""
-    result = crud.participant.get(db=db, id=id, raise_unfound=True)
+    result = crud.participant.get(db=db, id=id)
     return result
 
 

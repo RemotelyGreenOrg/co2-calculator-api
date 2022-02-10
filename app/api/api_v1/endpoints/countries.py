@@ -16,7 +16,7 @@ def read_country(
     id: int,
 ) -> Any:
     """Get country by ID"""
-    result = crud.country.get(db=db, id=id, raise_unfound=True)
+    result = crud.country.get(db=db, id=id)
     return result
 
 

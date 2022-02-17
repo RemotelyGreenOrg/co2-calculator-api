@@ -1,29 +1,20 @@
-import json
-
 import pyproj
-import reverse_geocoder
 from pydantic import BaseModel, conlist, confloat
 
 from app.api.api_v1.calculator_interface import CalculatorInterface
 from app.schemas.common import GeoCoordinates
 
 
-class Country(BaseModel):
-    iso_code: str
-    name: str
-    coordinates: GeoCoordinates
-
-
 class FlightStage(BaseModel):
     start: GeoCoordinates
     end: GeoCoordinates
+    start_iso_code: str
+    end_iso_code: str
     one_way: bool = True
 
 
 class FlightStageCarbonSummary(BaseModel):
     stage: FlightStage
-    start_country: Country
-    end_country: Country
     distance: confloat(ge=0.0)
     carbon_kg: confloat(ge=0.0)
 
@@ -58,10 +49,7 @@ def extend_flight_distance(distance: float) -> float:
     return distance + 125
 
 
-def get_stage_distance(
-    stage: FlightStage,
-    geod: pyproj.Geod,
-) -> float:
+def get_stage_distance(stage: FlightStage, geod: pyproj.Geod) -> float:
     """Calculate geodesic or great circle distances of flight stage
 
     Args:
@@ -74,34 +62,11 @@ def get_stage_distance(
     start, end = stage.start, stage.end
     distance = geod.inv(start.lon, start.lat, end.lon, end.lat)[2] / 1000
     distance = extend_flight_distance(distance)
-
-    if stage.one_way:
-        return distance
-
-    return distance * 2
-
-
-def geocoder_result_to_country(result: dict, countries: dict[str, str]) -> Country:
-    """Convert reverse_geocoder search result to a Country"""
-    code = result["cc"]
-    coordinates = GeoCoordinates(lon=result["lon"], lat=result["lat"])
-    return Country(iso_code=code, name=countries[code], coordinates=coordinates)
-
-
-def lookup_stage_countries(
-    stage: FlightStage, countries: dict[str, str]
-) -> tuple[Country, Country]:
-    """Use reverse_geocoder to find a flight stage's start and end countries"""
-    start, end = stage.start, stage.end
-    coordinates = [(start.lat, start.lon), (end.lat, end.lon)]
-    results = reverse_geocoder.search(coordinates)[:2]
-    country_results = [geocoder_result_to_country(r, countries) for r in results]
-    start_result, end_result = country_results[:2]
-    return start_result, end_result
+    return distance if stage.one_way else distance * 2
 
 
 def lookup_carbon_intensity_kg(
-    departure_country: Country,
+    iso_code: str,
     default_intensity_grams: float = 89.0,
 ) -> float:
     """Find the carbon intensity in kg/km of a flight given the departure country
@@ -112,7 +77,7 @@ def lookup_carbon_intensity_kg(
     See: https://theicct.org/publication/co2-emissions-from-commercial-aviation-2013-2018-and-2019
 
     Args:
-        departure_country: Flight departure country
+        iso_code: Flight departure country
         default_intensity_grams: Default value departure countries not explicitly
             enumerated in paper
 
@@ -160,15 +125,13 @@ def lookup_carbon_intensity_kg(
         "WF": 87,
         "YT": 87,
     }
-    code = departure_country.iso_code
-    intensity_grams = intensities.get(code, default_intensity_grams)
+    intensity_grams = intensities.get(iso_code, default_intensity_grams)
     return intensity_grams / 1000
 
 
 def calculate_carbon_stage(
     stage: FlightStage,
     geod: pyproj.Geod,
-    countries: dict[str, str],
     non_co2_effects_scaling: float = 1.9,
 ) -> FlightStageCarbonSummary:
     """Calculate flight emissions for an array of distances in km
@@ -185,20 +148,16 @@ def calculate_carbon_stage(
     Args:
         stage: Flight stage to calculate carbon intensity for
         geod: proj geodesic distance calculator
-        countries: Mapping from ISO 3166-1 alpha-2 country codes to country names
         non_co2_effects_scaling: Additional scaling for the non-CO2 climate effects of aviation
 
     Returns:
         Emitted CO2 in kg of each flight stage
     """
     distance = get_stage_distance(stage, geod)
-    start_country, end_country = lookup_stage_countries(stage, countries)
-    kg_co2_per_km = lookup_carbon_intensity_kg(start_country)
+    kg_co2_per_km = lookup_carbon_intensity_kg(stage.start_iso_code)
     carbon_kg = distance * kg_co2_per_km * non_co2_effects_scaling
     return FlightStageCarbonSummary(
         stage=stage,
-        start_country=start_country,
-        end_country=end_country,
         distance=distance,
         carbon_kg=carbon_kg,
     )
@@ -218,11 +177,7 @@ def calculate_carbon_stages(
         List of summaries for CO2 emissions from each flight stage
     """
     geod = pyproj.Geod(ellps=ellipse)
-
-    with open("data/iso_3166_countries.json") as f:
-        countries = json.load(f)
-
-    return [calculate_carbon_stage(stage, geod, countries) for stage in request.stages]
+    return [calculate_carbon_stage(stage, geod) for stage in request.stages]
 
 
 def build_response(

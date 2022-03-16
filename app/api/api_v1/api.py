@@ -2,12 +2,13 @@
 from fastapi import APIRouter
 
 from app.api.api_v1.endpoints import (
-    countries,
     cost_aggregator,
-    health_check,
-    websocket,
+    countries,
+    event_cost_aggregator,
     events,
+    health_check,
     participants,
+    websocket,
 )
 from app.api.api_v1.calculators import calculators
 
@@ -34,6 +35,11 @@ api_router.include_router(
     events.router,
     prefix="/events",
     tags=["events"],
+)
+api_router.include_router(
+    event_cost_aggregator.router,
+    prefix="/event-cost-aggregator",
+    tags=["events", "cost-aggregator"],
 )
 api_router.include_router(
     participants.router,

@@ -23,17 +23,9 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self.tablename = model.__tablename__
         self.model = model
 
-    def get(
-        self,
-        db: Session,
-        id: Any,
-        raise_unfound: bool = False,
-    ) -> Optional[ModelType]:
+    def get(self, db: Session, id: Any) -> ModelType:
         result = db.query(self.model).filter(self.model.id == id).first()
-
-        if raise_unfound:
-            self._raise_if_unfound(result)
-
+        result = self._raise_if_unfound(result)
         return result
 
     def get_multi(
@@ -61,23 +53,14 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             update_data = obj_in
         else:
             update_data = obj_in.dict(exclude_unset=True)
+
         for field in obj_data:
             if field in update_data:
                 setattr(db_obj, field, update_data[field])
+
         db.add(db_obj)
         db.commit()
         db.refresh(db_obj)
-        return db_obj
-
-    def find_and_update(
-        self,
-        db: Session,
-        *,
-        id: int,
-        obj_in: Union[UpdateSchemaType, Dict[str, Any]],
-    ) -> ModelType:
-        db_obj = self.get(db=db, id=id, raise_unfound=True)
-        db_obj = self.update(db=db, db_obj=db_obj, obj_in=obj_in)
         return db_obj
 
     def remove(self, db: Session, *, id: int) -> ModelType:
@@ -86,16 +69,24 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db.commit()
         return obj
 
-    def find_and_remove(
+    def find_and_update(
         self,
-        *,
         db: Session,
-        id: int
+        *,
+        id: int,
+        obj_in: Union[UpdateSchemaType, Dict[str, Any]],
     ) -> ModelType:
-        self.get(db=db, id=id, raise_unfound=True)
+        db_obj = self.get(db=db, id=id)
+        db_obj = self.update(db=db, db_obj=db_obj, obj_in=obj_in)
+        return db_obj
+
+    def find_and_remove(self, *, db: Session, id: int) -> ModelType:
+        self.get(db=db, id=id)
         db_obj = self.remove(db=db, id=id)
         return db_obj
 
-    def _raise_if_unfound(self, obj: ModelType) -> None:
-        if not obj:
+    def _raise_if_unfound(self, obj: Optional[ModelType]) -> ModelType:
+        if obj is None:
             raise HTTPException(status_code=404, detail=f"{self.classname} not found")
+
+        return obj

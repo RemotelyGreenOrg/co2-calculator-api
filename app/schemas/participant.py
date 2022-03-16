@@ -14,7 +14,7 @@ class ParticipantBase(BaseModel):
     event_id: Optional[int] = None
 
 
-# Properties to receive on country creation
+# Properties to receive on participant creation
 class ParticipantCreate(ParticipantBase):
     join_mode: JoinMode
     lon: float
@@ -46,6 +46,6 @@ class Participant(ParticipantInDBBase):
     pass
 
 
-# Properties properties stored in DB
+# Properties stored in DB
 class ParticipantInDB(ParticipantInDBBase):
     pass

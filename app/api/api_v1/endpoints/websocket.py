@@ -1,62 +1,182 @@
-from fastapi import APIRouter
+from typing import Optional, Any
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 from starlette.websockets import WebSocket
 from starlette.websockets import WebSocketDisconnect
 
-from app.schemas.event import EventModelWebsocket
+from app import crud, schemas, models
+from app.api import deps
+from app.api.api_v1.endpoints.event_cost_aggregator import (
+    event_cost_aggregator,
+    EventCostAggregatorRequest,
+    EventCostAggregatorResponse,
+)
+
+
+EventId = int
+ParticipantId = int
+
+
+class WebSocketTable:
+    def __init__(self: "WebSocketTable") -> None:
+        self._table: dict[EventId, dict[ParticipantId, WebSocket]] = {}
+
+    def __call__(self: "WebSocketTable") -> "WebSocketTable":
+        return self
+
+    @property
+    def table(self: "WebSocketTable") -> dict[EventId, dict[ParticipantId, WebSocket]]:
+        return self._table
+
+    def get_participant_websocket(
+        self: "WebSocketTable",
+        event_id: EventId,
+        participant_id: ParticipantId,
+    ) -> Optional[WebSocket]:
+        participant_sockets = self.table.get(event_id)
+
+        if participant_sockets is not None:
+            return participant_sockets.get(participant_id)
+
+        return None
+
+    def add_participant_websocket(
+        self: "WebSocketTable",
+        event_id: EventId,
+        participant_id: ParticipantId,
+        websocket: WebSocket,
+    ) -> "WebSocketTable":
+        if event_id not in self.table:
+            self.table[event_id] = {participant_id: websocket}
+
+        elif participant_id not in self.table[event_id]:
+            self.table[event_id][participant_id] = websocket
+
+        return self
+
+    def remove_participant_websocket(
+        self: "WebSocketTable",
+        event_id: EventId,
+        participant_id: ParticipantId,
+    ) -> Optional[WebSocket]:
+        socket = self.table.get(event_id, {}).get(participant_id)
+
+        if socket is not None:
+            del self.table[event_id][participant_id]
+
+        return socket
+
+    async def send_json_to_event_participant(
+        self: "WebSocketTable",
+        event_id: EventId,
+        participant_id: ParticipantId,
+        data: dict[str, Any],
+    ) -> None:
+        participant_socket = self.get_participant_websocket(event_id, participant_id)
+
+        if participant_socket is not None:
+            await participant_socket.send_json(data)
+
+    async def close_participant_connection(
+        self: "WebSocketTable",
+        event_id: Optional[int],
+        participant_id: Optional[int],
+    ) -> None:
+        if event_id and participant_id:
+            websocket = self.remove_participant_websocket(event_id, participant_id)
+
+            if websocket:
+                await websocket.close()
+
+
+def _get_event(db: Session, event_id: int) -> models.Event:
+    event = crud.event.get(db=db, id=event_id)
+    return event
+
+
+def _set_participant_active(db: Session, participant_id: int, is_active: bool) -> None:
+    obj_in = {"active": is_active}
+    crud.participant.find_and_update(db=db, id=participant_id, obj_in=obj_in)
+
+
+def _update_event_and_participant_tables(
+    db: Session,
+    event_id: int,
+    participant_id: int,
+) -> models.Event:
+    event = _get_event(db, event_id)
+    _set_participant_active(db, participant_id, is_active=True)
+    return event
+
+
+async def _publish_event_costs(
+    ws_table: WebSocketTable,
+    event: schemas.Event,
+    active_participants: list[schemas.Participant],
+    costs: EventCostAggregatorResponse,
+) -> None:
+    event_dict = event.dict()
+    event_participants_count = len(active_participants)
+
+    for participant in active_participants:
+        data = {
+            "event": event_dict,
+            "participant": participant.dict(),
+            "event_participants_count": event_participants_count,
+            "calculation": costs,
+        }
+        await ws_table.send_json_to_event_participant(event.id, participant.id, data)
+
+
+async def _recalculate_event_costs(
+    event: models.Event,
+    active_participants: list[models.Participant],
+) -> EventCostAggregatorResponse:
+    request = EventCostAggregatorRequest(event=event, participants=active_participants)
+    results = await event_cost_aggregator(request)
+    return results
+
 
 router = APIRouter()
-
-all_connections = []
-events = {}
+websockets_table = WebSocketTable()
 
 
 @router.websocket("/")
-async def websocket_endpoint(websocket: WebSocket):
+async def websocket_endpoint(
+    websocket: WebSocket,
+    ws_table: WebSocketTable = Depends(websockets_table),
+    db: Session = Depends(deps.get_db),
+) -> None:
     """
     The websocket endpoint is listening at the root URL and is accessed via the
     Websocket protocol (ws or wss).
     """
+    event_id = None
+    participant_id = None
+
     await websocket.accept()
-    all_connections.append(websocket)
+
     try:
         while True:
             data = await websocket.receive_json()
-            if "message" in data:
-                for connection in all_connections:
-                    await connection.send_json(data)
-            if "event_location" in data:
-                await create_event(websocket, **data)
-            if "participant_location" in data:
-                await someone_joined_event(websocket, **data)
 
+            event_id = data.get("event_id")
+            participant_id = data.get("participant_id")
+
+            if not event_id or not participant_id:
+                continue
+
+            event = _update_event_and_participant_tables(db, event_id, participant_id)
+            active_participants = [p for p in event.participants if p.active]
+            costs = await _recalculate_event_costs(event, active_participants)
+            ws_table = ws_table.add_participant_websocket(
+                event_id,
+                participant_id,
+                websocket,
+            )
+            await _publish_event_costs(ws_table, event, active_participants, costs)
     except WebSocketDisconnect:
-        for event in events.values():
-            await event.remove_participant(websocket)
-        all_connections.remove(websocket)
-
-
-async def create_event(websocket, event_name, event_location, **data):
-    event = events.get(event_name, None)
-    if event is None:
-        event = EventModelWebsocket(name=event_name, location=event_location)
-        events[event_name] = event
-
-    await websocket.send_json(
-        {
-            "event_name": event_name,
-            "event_location": event_location,
-            "event_participants": event.num_participants,
-            # "participant_locations": event.participant_locations,
-            # "calculation": 42 * event_participants,
-        }
-    )
-
-
-async def someone_joined_event(websocket, event_name, **data):
-    event = events[event_name]
-    await event.add_participant(
-        location=data["location"],
-        # TODO: Pass through from front end
-        join_mode="online",
-        websocket=websocket,
-    )
+        if participant_id:
+            await ws_table.close_participant_connection(event_id, participant_id)
+            _set_participant_active(db, participant_id, is_active=False)

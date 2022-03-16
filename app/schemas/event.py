@@ -15,7 +15,7 @@ class EventBase(BaseModel):
     lat: Optional[float] = None
 
 
-# Properties to receive on country creation
+# Properties to receive on event creation
 class EventCreate(EventBase):
     name: str
     lon: float

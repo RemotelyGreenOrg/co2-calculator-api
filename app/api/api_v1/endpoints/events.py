@@ -16,7 +16,7 @@ def read_event(
     id: int,
 ) -> Any:
     """Get event by ID"""
-    result = crud.event.get(db=db, id=id, raise_unfound=True)
+    result = crud.event.get(db=db, id=id)
     return result
 
 

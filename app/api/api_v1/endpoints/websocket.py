@@ -56,7 +56,6 @@ class WebSocketTable:
         elif participant_id not in self.table[event_id]:
             self.table[event_id][participant_id] = websocket
 
-
         return self
 
     def remove_participant_websocket(
@@ -114,8 +113,8 @@ def _update_event_and_participant_tables(
     event_id: int,
     participant_id: int,
 ) -> models.Event:
-    event = _get_event(db, event_id)
     _set_participant_active(db, participant_id, is_active=True)
+    event = _get_event(db, event_id)
     return event
 
 
@@ -129,10 +128,10 @@ async def _publish_event_costs(
 
     for participant in active_participants:
         data = {
-            "event": dict(event),
-            "participant": dict(participant),
+            "event": event.dict(),
+            "participant": participant.dict(),
             "event_participants_count": event_participants_count,
-            "calculation": costs,
+            "calculation": costs.dict(),
         }
         await ws_table.send_json_to_event_participant(event.id, participant.id, data)
 
@@ -175,14 +174,10 @@ async def websocket_endpoint(
             if not event_id or not participant_id:
                 continue
 
+            ws_table = ws_table.add_participant_websocket(event_id, participant_id, websocket)
             event = _update_event_and_participant_tables(db, event_id, participant_id)
             active_participants = [p for p in event.participants if p.active]
             costs = await _recalculate_event_costs(event, active_participants)
-            ws_table = ws_table.add_participant_websocket(
-                event_id,
-                participant_id,
-                websocket,
-            )
             await _publish_event_costs(ws_table, event, active_participants, costs)
     except WebSocketDisconnect:
         if participant_id:

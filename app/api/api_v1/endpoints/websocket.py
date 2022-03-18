@@ -34,6 +34,8 @@ class WebSocketTable:
         event_id: EventId,
         participant_id: ParticipantId,
     ) -> Optional[WebSocket]:
+        event_id = EventId(event_id) # Seems to need explicit casting
+
         participant_sockets = self.table.get(event_id)
 
         if participant_sockets is not None:
@@ -47,11 +49,13 @@ class WebSocketTable:
         participant_id: ParticipantId,
         websocket: WebSocket,
     ) -> "WebSocketTable":
+        event_id = EventId(event_id) # Seems to need explicit casting
         if event_id not in self.table:
             self.table[event_id] = {participant_id: websocket}
 
         elif participant_id not in self.table[event_id]:
             self.table[event_id][participant_id] = websocket
+
 
         return self
 
@@ -60,6 +64,7 @@ class WebSocketTable:
         event_id: EventId,
         participant_id: ParticipantId,
     ) -> Optional[WebSocket]:
+        event_id = EventId(event_id) # Seems to need explicit casting
         socket = self.table.get(event_id, {}).get(participant_id)
 
         if socket is not None:
@@ -73,8 +78,9 @@ class WebSocketTable:
         participant_id: ParticipantId,
         data: dict[str, Any],
     ) -> None:
-        participant_socket = self.get_participant_websocket(event_id, participant_id)
+        event_id = EventId(event_id) # Seems to need explicit casting
 
+        participant_socket = self.get_participant_websocket(event_id, participant_id)
         if participant_socket is not None:
             await participant_socket.send_json(data)
 
@@ -83,6 +89,8 @@ class WebSocketTable:
         event_id: Optional[int],
         participant_id: Optional[int],
     ) -> None:
+        event_id = EventId(event_id) # Seems to need explicit casting
+
         if event_id and participant_id:
             websocket = self.remove_participant_websocket(event_id, participant_id)
 
@@ -116,13 +124,12 @@ async def _publish_event_costs(
     active_participants: list[schemas.Participant],
     costs: EventCostAggregatorResponse,
 ) -> None:
-    event_dict = event.dict()
     event_participants_count = len(active_participants)
 
     for participant in active_participants:
         data = {
-            "event": event_dict,
-            "participant": participant.dict(),
+            "event": event,
+            "participant": participant,
             "event_participants_count": event_participants_count,
             "calculation": costs,
         }

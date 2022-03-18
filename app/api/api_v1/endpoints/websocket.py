@@ -98,8 +98,9 @@ class WebSocketTable:
                 await websocket.close()
 
 
-def _get_event(db: Session, event_id: int) -> models.Event:
-    event = crud.event.get(db=db, id=event_id)
+def _get_event(db: Session, event_id: int) -> schemas.Event:
+    db_event = crud.event.get(db=db, id=event_id)
+    event = schemas.Event.from_orm(db_event)
     return event
 
 
@@ -128,8 +129,8 @@ async def _publish_event_costs(
 
     for participant in active_participants:
         data = {
-            "event": event,
-            "participant": participant,
+            "event": dict(event),
+            "participant": dict(participant),
             "event_participants_count": event_participants_count,
             "calculation": costs,
         }

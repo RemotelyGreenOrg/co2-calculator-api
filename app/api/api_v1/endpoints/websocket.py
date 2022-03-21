@@ -83,7 +83,7 @@ class WebSocketTable:
         if participant_socket is not None:
             await participant_socket.send_json(data)
 
-    async def close_participant_connection(
+    def participant_connection_closed(
         self: "WebSocketTable",
         event_id: Optional[int],
         participant_id: Optional[int],
@@ -92,9 +92,6 @@ class WebSocketTable:
 
         if event_id and participant_id:
             websocket = self.remove_participant_websocket(event_id, participant_id)
-
-            if websocket:
-                await websocket.close()
 
 
 def _get_event(db: Session, event_id: int) -> schemas.Event:
@@ -181,5 +178,5 @@ async def websocket_endpoint(
             await _publish_event_costs(ws_table, event, active_participants, costs)
     except WebSocketDisconnect:
         if participant_id:
-            await ws_table.close_participant_connection(event_id, participant_id)
+            ws_table.participant_connection_closed(event_id, participant_id)
             _set_participant_active(db, participant_id, is_active=False)

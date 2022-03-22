@@ -2,6 +2,7 @@ import asyncio
 import itertools
 from typing import cast, Final
 
+import reverse_geocoder
 from fastapi import APIRouter
 from pydantic import BaseModel
 from vc_calculator.interface import OnlineDetails, ConnectionTypes, KnownDevicesEnum
@@ -45,7 +46,12 @@ def build_in_person_cost_path(
     end: GeoCoordinates,
 ) -> CostPath:
     start = GeoCoordinates(lon=participant.lon, lat=participant.lat)
-    flight_stage = FlightStage(start=start, end=end, one_way=False)
+
+    coordinates = [(start.lat, start.lon), (end.lat, end.lon)]
+    results = reverse_geocoder.search(coordinates)[:2]
+    flight_stage = FlightStage(start=start, end=end,
+                               start_iso_code=results[0]["cc"],
+                               end_iso_code=results[1]["cc"], one_way=False)
     in_person_path = CostPath(
         title=IN_PERSON_ATTENDANCE_TITLE,
         cost_items=[

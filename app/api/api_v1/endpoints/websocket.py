@@ -34,6 +34,8 @@ class WebSocketTable:
         event_id: EventId,
         participant_id: ParticipantId,
     ) -> Optional[WebSocket]:
+        event_id = EventId(event_id) # Seems to need explicit casting
+
         participant_sockets = self.table.get(event_id)
 
         if participant_sockets is not None:
@@ -47,6 +49,7 @@ class WebSocketTable:
         participant_id: ParticipantId,
         websocket: WebSocket,
     ) -> "WebSocketTable":
+        event_id = EventId(event_id) # Seems to need explicit casting
         if event_id not in self.table:
             self.table[event_id] = {participant_id: websocket}
 
@@ -60,6 +63,7 @@ class WebSocketTable:
         event_id: EventId,
         participant_id: ParticipantId,
     ) -> Optional[WebSocket]:
+        event_id = EventId(event_id) # Seems to need explicit casting
         socket = self.table.get(event_id, {}).get(participant_id)
 
         if socket is not None:
@@ -73,25 +77,26 @@ class WebSocketTable:
         participant_id: ParticipantId,
         data: dict[str, Any],
     ) -> None:
-        participant_socket = self.get_participant_websocket(event_id, participant_id)
+        event_id = EventId(event_id) # Seems to need explicit casting
 
+        participant_socket = self.get_participant_websocket(event_id, participant_id)
         if participant_socket is not None:
             await participant_socket.send_json(data)
 
-    async def close_participant_connection(
+    def participant_connection_closed(
         self: "WebSocketTable",
         event_id: Optional[int],
         participant_id: Optional[int],
     ) -> None:
+        event_id = EventId(event_id) # Seems to need explicit casting
+
         if event_id and participant_id:
             websocket = self.remove_participant_websocket(event_id, participant_id)
 
-            if websocket:
-                await websocket.close()
 
-
-def _get_event(db: Session, event_id: int) -> models.Event:
-    event = crud.event.get(db=db, id=event_id)
+def _get_event(db: Session, event_id: int) -> schemas.Event:
+    db_event = crud.event.get(db=db, id=event_id)
+    event = schemas.Event.from_orm(db_event)
     return event
 
 
@@ -105,8 +110,8 @@ def _update_event_and_participant_tables(
     event_id: int,
     participant_id: int,
 ) -> models.Event:
-    event = _get_event(db, event_id)
     _set_participant_active(db, participant_id, is_active=True)
+    event = _get_event(db, event_id)
     return event
 
 
@@ -116,15 +121,14 @@ async def _publish_event_costs(
     active_participants: list[schemas.Participant],
     costs: EventCostAggregatorResponse,
 ) -> None:
-    event_dict = event.dict()
     event_participants_count = len(active_participants)
 
     for participant in active_participants:
         data = {
-            "event": event_dict,
+            "event": event.dict(),
             "participant": participant.dict(),
             "event_participants_count": event_participants_count,
-            "calculation": costs,
+            "calculation": costs.dict(),
         }
         await ws_table.send_json_to_event_participant(event.id, participant.id, data)
 
@@ -167,16 +171,12 @@ async def websocket_endpoint(
             if not event_id or not participant_id:
                 continue
 
+            ws_table = ws_table.add_participant_websocket(event_id, participant_id, websocket)
             event = _update_event_and_participant_tables(db, event_id, participant_id)
             active_participants = [p for p in event.participants if p.active]
             costs = await _recalculate_event_costs(event, active_participants)
-            ws_table = ws_table.add_participant_websocket(
-                event_id,
-                participant_id,
-                websocket,
-            )
             await _publish_event_costs(ws_table, event, active_participants, costs)
     except WebSocketDisconnect:
         if participant_id:
-            await ws_table.close_participant_connection(event_id, participant_id)
+            ws_table.participant_connection_closed(event_id, participant_id)
             _set_participant_active(db, participant_id, is_active=False)

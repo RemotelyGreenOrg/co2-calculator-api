@@ -1,6 +1,6 @@
 import asyncio
 import itertools
-from typing import cast, Final
+from typing import cast, Final, Callable
 
 import reverse_geocoder
 from fastapi import APIRouter
@@ -21,13 +21,9 @@ from app.api.api_v1.endpoints.flight_calculator import (
     FlightStage,
 )
 from app.schemas import Event, Participant
-from app.schemas.common import GeoCoordinates
+from app.schemas.common import GeoCoordinates, JoinMode
 
 router = APIRouter()
-
-
-IN_PERSON_ATTENDANCE_TITLE: Final[str] = "In-Person Attendance"
-ONLINE_ATTENDANCE_TITLE: Final[str] = "Online Attendance"
 
 
 class EventCostAggregatorRequest(BaseModel):
@@ -38,6 +34,7 @@ class EventCostAggregatorRequest(BaseModel):
 class EventCostAggregatorResponse(BaseModel):
     in_person_total_carbon_kg: float
     online_total_carbon_kg: float
+    actual_total_carbon_kg: float
     participant_cost_aggregator_responses: list[CostAggregatorResponse]
 
 
@@ -53,7 +50,7 @@ def build_in_person_cost_path(
                                start_iso_code=results[0]["cc"],
                                end_iso_code=results[1]["cc"], one_way=False)
     in_person_path = CostPath(
-        title=IN_PERSON_ATTENDANCE_TITLE,
+        title=JoinMode.in_person,
         cost_items=[
             CostItem(
                 calculator_name=flight_calculator.calculator_interface.name,
@@ -74,7 +71,7 @@ def build_online_cost_path(total_participants: int) -> CostPath:
         connection=ConnectionTypes.wifi,
     )
     online_path = CostPath(
-        title=ONLINE_ATTENDANCE_TITLE,
+        title=JoinMode.online,
         cost_items=[
             CostItem(
                 calculator_name=online.calculator_interface.name,
@@ -109,26 +106,24 @@ def build_cost_aggregator_requests(
     return requests
 
 
-def merge_cost_aggregator_responses(responses: list[CostAggregatorResponse]):
-    in_person_results = itertools.chain.from_iterable(
-        [
-            [cp for cp in response.cost_paths if cp.title == IN_PERSON_ATTENDANCE_TITLE]
-            for response in responses
-        ]
-    )
-    online_results = itertools.chain.from_iterable(
-        [
-            [cp for cp in response.cost_paths if cp.title == ONLINE_ATTENDANCE_TITLE]
-            for response in responses
-        ]
-    )
+def merge_cost_aggregator_responses(request: EventCostAggregatorResponse, responses: list[CostAggregatorResponse]):
+    def sum_cost_path_filter(select: Callable[[CostPath, Participant], bool]):
+        cost_paths = itertools.chain.from_iterable(
+            (
+                (cp.total_carbon_kg for cp in response.cost_paths if select(cp, participant))
+                for response, participant in zip(responses, request.participants)
+            )
+        )
+        return sum(cost_paths)
 
-    in_person_total = sum(result.total_carbon_kg for result in in_person_results)
-    online_total = sum(result.total_carbon_kg for result in online_results)
+    in_person_total = sum_cost_path_filter(lambda cp, _: cp.title == JoinMode.in_person)
+    online_total = sum_cost_path_filter(lambda cp, _: cp.title == JoinMode.online)
+    actual_total = sum_cost_path_filter(lambda cp, participant: cp.title == participant.join_mode)
 
     return EventCostAggregatorResponse(
         in_person_total_carbon_kg=in_person_total,
         online_total_carbon_kg=online_total,
+        actual_total_carbon_kg=actual_total,
         participant_cost_aggregator_responses=responses,
     )
 
@@ -138,8 +133,8 @@ async def event_cost_aggregator(
     request: EventCostAggregatorRequest,
 ) -> EventCostAggregatorResponse:
     requests = build_cost_aggregator_requests(request)
-    response_futures = [cost_aggregator(request) for request in requests]
+    response_futures = [cost_aggregator(req) for req in requests]
     responses = await asyncio.gather(*response_futures)
     responses = cast(list[CostAggregatorResponse], responses)
-    response = merge_cost_aggregator_responses(responses)
+    response = merge_cost_aggregator_responses(request, responses)
     return response
